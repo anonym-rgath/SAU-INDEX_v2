@@ -99,13 +99,15 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
 
 ### Authentifizierung
 - **JWT-Token** basierte Session-Verwaltung
-- Token-Gültigkeit: 24 Stunden
+- Token-Gültigkeit: 8 Stunden
 - Idle-Timeout: 15 Minuten Inaktivität
 - Absolutes Timeout: 8 Stunden
+- Logout-Endpoint zum Beenden der Sitzung
 
 ### Passwort-Sicherheit
 - **bcrypt** Hashing mit 12 Runden
-- Mindestlänge: 6 Zeichen
+- Mindestlänge: 8 Zeichen
+- Mindestens 1 Großbuchstabe, 1 Kleinbuchstabe, 1 Zahl
 - Passwort-Änderung für alle Benutzer möglich
 - Admin kann Passwörter zurücksetzen
 
@@ -116,9 +118,9 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
 
 ### HTTPS
 - Cloudflare Origin Certificate für sau-index.de
-- HTTP wird automatisch auf HTTPS umgeleitet
+- Cloudflare Tunnel leitet Anfragen an den lokalen Nginx (HTTP, Port 80)
 - TLS 1.2/1.3 mit sicheren Cipher Suites
-- Zertifikat gültig bis 2041
+- Nginx Security Headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, HSTS
 
 ### Audit-Logging
 - Alle relevanten Aktionen werden protokolliert
@@ -182,6 +184,9 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
 ### Statistiken
 - Gesamtsumme, Anzahl Strafen, Durchschnitt pro Strafe
 - Balkendiagramm: Top 10 Mitglieder
+- Kreisdiagramm: Strafen nach Art
+- Liniendiagramm: Monatlicher Verlauf über das Geschäftsjahr
+- Ranking: Aktive und passive Mitglieder getrennt (Top 5)
 - Filterung nach Geschäftsjahr
 
 ### Benutzerverwaltung (nur Admin)
@@ -205,7 +210,7 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
 | Methode | Endpoint | Beschreibung |
 |---------|----------|--------------|
 | POST | `/api/auth/login` | Login (Rate Limited) |
-| GET | `/api/auth/me` | Aktueller Benutzer |
+| POST | `/api/auth/logout` | Logout (Audit-Log) |
 | PUT | `/api/auth/change-password` | Passwort ändern |
 
 ### Benutzerverwaltung (Admin)
@@ -213,6 +218,7 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
 |---------|----------|--------------|
 | GET | `/api/users` | Alle Benutzer |
 | POST | `/api/users` | Benutzer erstellen |
+| PUT | `/api/users/{id}` | Benutzer bearbeiten |
 | DELETE | `/api/users/{id}` | Benutzer löschen |
 | PUT | `/api/users/{id}/reset-password` | Passwort zurücksetzen |
 
@@ -243,7 +249,8 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
 ### Statistiken & System
 | Methode | Endpoint | Beschreibung |
 |---------|----------|--------------|
-| GET | `/api/statistics?fiscal_year={year}` | Statistiken |
+| GET | `/api/statistics?fiscal_year={year}` | Statistiken (MongoDB Aggregation) |
+| GET | `/api/statistics/personal?fiscal_year={year}` | Persönliche Statistik |
 | GET | `/api/fiscal-years` | Verfügbare Geschäftsjahre |
 | GET | `/api/audit-logs` | Audit-Logs (nur Admin) |
 | GET | `/health` | Health Check |
@@ -294,11 +301,10 @@ rheinzelmaenner/
 │       │   ├── TopBar.js
 │       │   └── Layout.js
 │       ├── contexts/
-│       │   └── AuthContext.js  # Authentifizierung Context
-│       ├── hooks/
-│       │   └── useAuth.js      # Auth Hook mit Timeout-Logik
+│       │   └── AuthContext.js  # Authentifizierung Context (inkl. Idle/Absolute Timeout)
 │       ├── lib/
-│       │   └── api.js          # API Client
+│       │   ├── api.js          # API Client
+│       │   └── utils.js        # Hilfsfunktionen (Währung, Datum)
 │       └── pages/
 │           ├── Login.js
 │           ├── Dashboard.js
