@@ -1,0 +1,21 @@
+# Traefik Reverse Proxy - Statische Konfiguration
+# Zentral für alle Docker-Anwendungen auf dem Raspberry Pi
+
+api:
+  dashboard: true
+  insecure: true  # Dashboard auf Port 8080 (nur lokal)
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false  # Nur Container mit Labels werden geroutet
+    network: traefik-network
+
+log:
+  level: "INFO"
+
+accessLog: {}

@@ -40,12 +40,18 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
                     |     Browser      |
                     +--------+---------+
                              |
-                    Port 443 (HTTPS)
-                    Port 80 -> Redirect
+                    Port 80 (HTTP)
+                             |
+              +--------------v--------------+
+              |   Traefik Reverse Proxy     |
+              |   Routet nach Domain/Host   |
+              +--------------+--------------+
+                             |
+                   traefik-network
                              |
               +--------------v--------------+
               |   Frontend Container        |
-              |   (React + Nginx + SSL)     |
+              |   (React + Nginx)           |
               |   - Statische Dateien       |
               |   - /api/* -> Backend       |
               +--------------+--------------+
@@ -91,7 +97,15 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
 |-------------|------------|
 | Docker | Containerisierung |
 | Docker Compose | Multi-Container Orchestrierung |
-| Nginx | Reverse Proxy & SSL Termination |
+| Traefik | Zentraler Reverse Proxy (Multi-App fähig) |
+| Nginx | Interner SPA-Server + API-Proxy |
+| Cloudflare Tunnels | Externer Zugriff (HTTPS) |
+
+> **Zwei Betriebsmodi verfügbar:**
+> - `docker-compose.yml` – Traefik-Modus (mehrere Apps parallel)
+> - `docker-compose.standalone.yml` – Standalone (einzelne App, direkt Port 80/443)
+> 
+> Siehe [TRAEFIK_SETUP.md](TRAEFIK_SETUP.md) für die Multi-App Anleitung.
 
 ---
 
@@ -286,7 +300,8 @@ rheinzelmaenner/
 ├── frontend/
 │   ├── Dockerfile              # Frontend Docker Image
 │   ├── nginx.conf              # Nginx Konfiguration (HTTP)
-│   ├── nginx.ssl.conf          # Nginx Konfiguration (HTTPS)
+│   ├── nginx.ssl.conf          # Nginx Konfiguration (HTTPS/Standalone)
+│   ├── nginx.traefik.conf      # Nginx Konfiguration (Traefik-Modus)
 │   ├── package.json            # Node.js Dependencies
 │   ├── public/
 │   │   └── logo.png            # App Logo
@@ -314,16 +329,21 @@ rheinzelmaenner/
 │           ├── FineTypes.js
 │           ├── UserManagement.js
 │           └── AuditLogs.js
-├── certs/                      # SSL Zertifikate (gitignored)
-├── docker-compose.yml          # Docker Compose Konfiguration
-├── start.sh                    # Start-Script
-├── stop.sh                     # Stop-Script
-├── logs.sh                     # Log-Viewer Script
-├── setup-https.sh              # SSL-Zertifikat erneuern
-├── .env.example                # Beispiel-Konfiguration
-├── README.md                   # Diese Datei
-├── DOCKER_DEPLOYMENT.md        # Deployment Anleitung
-└── HTTPS_SETUP.md              # HTTPS Setup Anleitung
+├── traefik/                     # Traefik Reverse Proxy
+│   ├── docker-compose.yml       # Traefik Container
+│   └── traefik.yml              # Traefik Konfiguration
+├── certs/                       # SSL Zertifikate (gitignored)
+├── docker-compose.yml           # Docker Compose (Traefik-Modus)
+├── docker-compose.standalone.yml # Docker Compose (Standalone, Port 80/443)
+├── start.sh                     # Start-Script
+├── stop.sh                      # Stop-Script
+├── logs.sh                      # Log-Viewer Script
+├── setup-https.sh               # SSL-Zertifikat erneuern
+├── .env.example                 # Beispiel-Konfiguration
+├── README.md                    # Diese Datei
+├── DOCKER_DEPLOYMENT.md         # Deployment Anleitung
+├── HTTPS_SETUP.md               # HTTPS Setup Anleitung
+└── TRAEFIK_SETUP.md             # Traefik Multi-App Anleitung
 ```
 
 ---

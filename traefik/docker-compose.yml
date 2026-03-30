@@ -1,0 +1,27 @@
+# =============================================================
+#  Traefik Reverse Proxy - Zentrale Instanz
+#  Wird EINMAL auf dem Raspberry Pi gestartet.
+#  Alle Apps verbinden sich über das "traefik-network".
+# =============================================================
+
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"       # HTTP (Cloudflare Tunnel verbindet hierher)
+      - "8080:8080"   # Traefik Dashboard (nur lokal erreichbar)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+
+networks:
+  traefik-network:
+    external: true
