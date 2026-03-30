@@ -1,17 +1,25 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Members from './pages/Members';
-import FineTypes from './pages/FineTypes';
-import Fines from './pages/Fines';
-import Statistics from './pages/Statistics';
-import UserManagement from './pages/UserManagement';
-import AuditLogs from './pages/AuditLogs';
+
+// Lazy-loaded pages for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Members = lazy(() => import('./pages/Members'));
+const FineTypes = lazy(() => import('./pages/FineTypes'));
+const Fines = lazy(() => import('./pages/Fines'));
+const Statistics = lazy(() => import('./pages/Statistics'));
+const UserManagement = lazy(() => import('./pages/UserManagement'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="text-stone-400 text-sm">Laden...</div>
+  </div>
+);
 
 // Redirect based on role
 const RoleBasedRedirect = () => {
@@ -50,29 +58,31 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<RoleBasedRedirect />} />
-            <Route path="dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
-            <Route path="members" element={<NoMitgliedRoute><Members /></NoMitgliedRoute>} />
-            <Route path="fine-types" element={<NoMitgliedRoute><FineTypes /></NoMitgliedRoute>} />
-            <Route path="fines" element={<DashboardRoute><Fines /></DashboardRoute>} />
-            <Route path="statistics" element={<NoMitgliedRoute><Statistics /></NoMitgliedRoute>} />
-            <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-            <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
-          </Route>
-          
-          <Route path="*" element={<RoleBasedRedirect />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<RoleBasedRedirect />} />
+              <Route path="dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
+              <Route path="members" element={<NoMitgliedRoute><Members /></NoMitgliedRoute>} />
+              <Route path="fine-types" element={<NoMitgliedRoute><FineTypes /></NoMitgliedRoute>} />
+              <Route path="fines" element={<DashboardRoute><Fines /></DashboardRoute>} />
+              <Route path="statistics" element={<NoMitgliedRoute><Statistics /></NoMitgliedRoute>} />
+              <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+              <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
+            </Route>
+            
+            <Route path="*" element={<RoleBasedRedirect />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
     </AuthProvider>

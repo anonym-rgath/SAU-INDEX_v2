@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../lib/api';
 import { Card } from '../components/ui/card';
 import { Calendar, TrendingUp, Award, Users as UsersIcon, Coins } from 'lucide-react';
@@ -99,7 +99,7 @@ const Statistics = () => {
     return members.find(m => m.id === memberId)?.name || 'Unbekannt';
   };
 
-  const getFineTypeStats = () => {
+  const fineTypeStats = useMemo(() => {
     const stats = {};
     fineTypes.forEach(ft => {
       stats[ft.id] = { label: ft.label, count: 0, total: 0 };
@@ -113,9 +113,9 @@ const Statistics = () => {
     });
     
     return Object.values(stats).filter(s => s.count > 0);
-  };
+  }, [fines, fineTypes]);
 
-  const getMonthlyStats = () => {
+  const monthlyStats = useMemo(() => {
     const monthNames = ['Aug', 'Sep', 'Okt', 'Nov', 'Dez', 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul'];
     const monthlyData = monthNames.map(month => ({ month, amount: 0, count: 0 }));
     
@@ -123,11 +123,10 @@ const Statistics = () => {
       const date = new Date(fine.date);
       let monthIndex = date.getMonth();
       
-      // Geschäftsjahr startet im August (Monat 7)
       if (monthIndex >= 7) {
-        monthIndex = monthIndex - 7; // Aug=0, Sep=1, ...
+        monthIndex = monthIndex - 7;
       } else {
-        monthIndex = monthIndex + 5; // Jan=5, Feb=6, ...
+        monthIndex = monthIndex + 5;
       }
       
       if (monthIndex >= 0 && monthIndex < 12) {
@@ -137,24 +136,27 @@ const Statistics = () => {
     });
     
     return monthlyData;
-  };
+  }, [fines]);
 
-  const getActiveMembersRanking = () => {
+  const activeMembersRanking = useMemo(() => {
     if (!statistics?.ranking) return [];
     return statistics.ranking.filter(entry => {
       const member = members.find(m => m.id === entry.member_id);
-      // Leerer Status oder 'aktiv' = aktiv
       return !member?.status || member?.status === 'aktiv' || member?.status === '';
     });
-  };
+  }, [statistics, members]);
 
-  const getPassiveMembersRanking = () => {
+  const passiveMembersRanking = useMemo(() => {
     if (!statistics?.ranking) return [];
     return statistics.ranking.filter(entry => {
       const member = members.find(m => m.id === entry.member_id);
       return member?.status === 'passiv';
     });
-  };
+  }, [statistics, members]);
+
+  const avgFine = useMemo(() => {
+    return statistics?.total_fines > 0 ? statistics.total_amount / statistics.total_fines : 0;
+  }, [statistics]);
 
   if (loading) {
     return (
@@ -163,12 +165,6 @@ const Statistics = () => {
       </div>
     );
   }
-
-  const fineTypeStats = getFineTypeStats();
-  const monthlyStats = getMonthlyStats();
-  const activeMembersRanking = getActiveMembersRanking();
-  const passiveMembersRanking = getPassiveMembersRanking();
-  const avgFine = statistics?.total_fines > 0 ? statistics.total_amount / statistics.total_fines : 0;
 
   return (
     <div className="min-h-screen bg-stone-50">

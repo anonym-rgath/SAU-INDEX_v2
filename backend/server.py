@@ -891,7 +891,7 @@ async def create_fine_type(input: FineTypeCreate, auth=Depends(require_any_role)
 
 @api_router.put("/fine-types/{fine_type_id}", response_model=FineType)
 async def update_fine_type(fine_type_id: str, input: FineTypeCreate, auth=Depends(require_any_role)):
-    result = await db.fine_types.find_one({" id": fine_type_id}, {"_id": 0})
+    result = await db.fine_types.find_one({"id": fine_type_id}, {"_id": 0})
     if not result:
         raise HTTPException(status_code=404, detail="Strafenart nicht gefunden")
     
@@ -922,13 +922,12 @@ async def get_fines(fiscal_year: Optional[str] = None, auth=Depends(require_auth
     
     if role == 'mitglied':
         if not member_id:
-            return []  # Kein verknüpftes Mitglied
+            return []
         query["member_id"] = member_id
     elif role == 'vorstand' and member_id:
-        # Vorstand mit Mitglied-Verknüpfung sieht nur eigene Strafen
         query["member_id"] = member_id
     
-    fines = await db.fines.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    fines = await db.fines.find(query, {"_id": 0}).sort("date", -1).to_list(5000)
     for fine in fines:
         if isinstance(fine.get('date'), str):
             fine['date'] = datetime.fromisoformat(fine['date'])
@@ -955,7 +954,7 @@ async def create_fine(input: FineCreate, auth=Depends(require_admin_or_spiess)):
     if input.date:
         try:
             fine_date = datetime.fromisoformat(input.date.replace('Z', '+00:00'))
-        except:
+        except (ValueError, TypeError):
             fine_date = datetime.now(timezone.utc)
     else:
         fine_date = datetime.now(timezone.utc)
@@ -998,49 +997,58 @@ async def get_statistics(fiscal_year: str, auth=Depends(require_authenticated)):
     if auth.get('role') == 'mitglied':
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Berechtigung")
     
-    fines = await db.fines.find({"fiscal_year": fiscal_year}, {"_id": 0}).to_list(10000)
-    # Nur aktive und passive Mitglieder (keine archivierten)
-    members = await db.members.find({"status": {"$ne": "archiviert"}}, {"_id": 0}).to_list(1000)
+    # Nicht-archivierte Mitglieder laden (nur benötigte Felder)
+    members = await db.members.find(
+        {"status": {"$ne": "archiviert"}},
+        {"_id": 0, "id": 1, "firstName": 1, "lastName": 1, "name": 1}
+    ).to_list(1000)
     
-    # Generiere vollständigen Namen aus firstName und lastName
-    def get_full_name(m):
+    member_map = {}
+    for m in members:
         if 'firstName' in m and 'lastName' in m:
-            return f"{m['firstName']} {m['lastName']}"
-        return m.get('name', 'Unbekannt')
+            member_map[m['id']] = f"{m['firstName']} {m['lastName']}"
+        else:
+            member_map[m['id']] = m.get('name', 'Unbekannt')
     
-    member_map = {m['id']: get_full_name(m) for m in members}
-    member_status = {m['id']: m.get('status', 'aktiv') for m in members}
-    totals = {}
+    active_member_ids = list(member_map.keys())
     
-    for fine in fines:
-        member_id = fine['member_id']
-        # Nur Strafen von nicht-archivierten Mitgliedern zählen
-        if member_id not in member_map:
-            continue
-        if member_id not in totals:
-            totals[member_id] = 0
-        totals[member_id] += fine['amount']
+    # Aggregation Pipeline: Summen pro Mitglied direkt in MongoDB berechnen
+    pipeline = [
+        {"$match": {"fiscal_year": fiscal_year, "member_id": {"$in": active_member_ids}}},
+        {"$group": {
+            "_id": "$member_id",
+            "total": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"total": -1}}
+    ]
+    agg_results = await db.fines.aggregate(pipeline).to_list(1000)
+    
+    # Gesamtstatistik via separate Aggregation (inkl. Strafen archivierter Mitglieder für Gesamtzählung)
+    totals_pipeline = [
+        {"$match": {"fiscal_year": fiscal_year}},
+        {"$group": {"_id": None, "total_amount": {"$sum": "$amount"}, "total_count": {"$sum": 1}}}
+    ]
+    totals_result = await db.fines.aggregate(totals_pipeline).to_list(1)
+    total_fines = totals_result[0]["total_count"] if totals_result else 0
+    total_amount = totals_result[0]["total_amount"] if totals_result else 0.0
     
     ranking = []
-    for member_id, total in totals.items():
+    for idx, r in enumerate(agg_results):
         ranking.append(RankingEntry(
-            member_id=member_id,
-            member_name=member_map.get(member_id, "Unbekannt"),
-            total=total,
-            rank=0
+            member_id=r["_id"],
+            member_name=member_map.get(r["_id"], "Unbekannt"),
+            total=r["total"],
+            rank=idx + 1
         ))
     
-    ranking.sort(key=lambda x: x.total, reverse=True)
-    for idx, entry in enumerate(ranking):
-        entry.rank = idx + 1
-    
-    sau = ranking[0] if len(ranking) > 0 else None
-    laemmchen = ranking[-1] if len(ranking) > 0 else None
+    sau = ranking[0] if ranking else None
+    laemmchen = ranking[-1] if ranking else None
     
     return Statistics(
         fiscal_year=fiscal_year,
-        total_fines=len(fines),
-        total_amount=sum(f['amount'] for f in fines),
+        total_fines=total_fines,
+        total_amount=total_amount,
         sau=sau,
         laemmchen=laemmchen,
         ranking=ranking
@@ -1059,10 +1067,8 @@ class PersonalStatistics(BaseModel):
 async def get_personal_statistics(fiscal_year: str, auth=Depends(require_authenticated)):
     """Persönliche Statistik für ein Mitglied oder Vorstand"""
     member_id = auth.get('member_id')
-    role = auth.get('role')
     username = auth.get('username', 'Unbekannt')
     
-    # Wenn kein Mitglied verknüpft ist (z.B. Vorstand ohne member_id)
     if not member_id:
         return PersonalStatistics(
             fiscal_year=fiscal_year,
@@ -1073,8 +1079,11 @@ async def get_personal_statistics(fiscal_year: str, auth=Depends(require_authent
             total_members=None
         )
     
-    # Mitglied-Daten holen
-    member = await db.members.find_one({"id": member_id}, {"_id": 0})
+    # Mitglied-Name laden (nur benötigte Felder)
+    member = await db.members.find_one(
+        {"id": member_id},
+        {"_id": 0, "firstName": 1, "lastName": 1, "name": 1}
+    )
     if not member:
         return PersonalStatistics(
             fiscal_year=fiscal_year,
@@ -1087,35 +1096,43 @@ async def get_personal_statistics(fiscal_year: str, auth=Depends(require_authent
     
     member_name = f"{member.get('firstName', '')} {member.get('lastName', '')}".strip() or member.get('name', 'Unbekannt')
     
-    # Eigene Strafen
-    own_fines = await db.fines.find({"fiscal_year": fiscal_year, "member_id": member_id}, {"_id": 0}).to_list(10000)
+    # Nicht-archivierte Mitglieder-IDs
+    active_members = await db.members.find(
+        {"status": {"$ne": "archiviert"}},
+        {"_id": 0, "id": 1}
+    ).to_list(1000)
+    active_ids = [m['id'] for m in active_members]
     
-    # Ranking berechnen (alle nicht-archivierten Mitglieder)
-    all_fines = await db.fines.find({"fiscal_year": fiscal_year}, {"_id": 0}).to_list(10000)
-    all_members = await db.members.find({"status": {"$ne": "archiviert"}}, {"_id": 0}).to_list(1000)
-    member_ids = {m['id'] for m in all_members}
+    # Aggregation: Alle Summen pro Mitglied + eigene Statistik in einem Query
+    pipeline = [
+        {"$match": {"fiscal_year": fiscal_year, "member_id": {"$in": active_ids}}},
+        {"$group": {
+            "_id": "$member_id",
+            "total": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"total": -1}}
+    ]
+    agg_results = await db.fines.aggregate(pipeline).to_list(1000)
     
-    totals = {}
-    for fine in all_fines:
-        mid = fine['member_id']
-        if mid in member_ids:
-            totals[mid] = totals.get(mid, 0) + fine['amount']
-    
-    # Sortiere nach Summe
-    sorted_members = sorted(totals.items(), key=lambda x: x[1], reverse=True)
+    # Rank und eigene Stats aus Aggregation ableiten
     rank = None
-    for idx, (mid, total) in enumerate(sorted_members):
-        if mid == member_id:
+    own_total = 0.0
+    own_count = 0
+    for idx, r in enumerate(agg_results):
+        if r["_id"] == member_id:
             rank = idx + 1
+            own_total = r["total"]
+            own_count = r["count"]
             break
     
     return PersonalStatistics(
         fiscal_year=fiscal_year,
         member_name=member_name,
-        total_fines=len(own_fines),
-        total_amount=sum(f['amount'] for f in own_fines),
+        total_fines=own_count,
+        total_amount=own_total,
         rank=rank,
-        total_members=len(totals)
+        total_members=len(agg_results)
     )
 
 @api_router.get("/fiscal-years")
@@ -1189,14 +1206,28 @@ async def startup_db_client():
         else:
             logger.info("Admin-Benutzer existiert bereits")
         
-        # Indizes für Brute-Force-Schutz erstellen
-        await db.login_attempts.create_index("timestamp", expireAfterSeconds=3600)  # Auto-Löschung nach 1h
+        # Indizes für Brute-Force-Schutz
+        await db.login_attempts.create_index("timestamp", expireAfterSeconds=3600)
         await db.login_attempts.create_index([("username", 1), ("timestamp", -1)])
         await db.login_attempts.create_index([("ip_address", 1), ("timestamp", -1)])
-        await db.account_lockouts.create_index("locked_until", expireAfterSeconds=0)  # Auto-Löschung nach Ablauf
+        await db.account_lockouts.create_index("locked_until", expireAfterSeconds=0)
         await db.account_lockouts.create_index("username")
         await db.account_lockouts.create_index("ip_address")
-        logger.info("Datenbank-Indizes für Brute-Force-Schutz erstellt")
+        
+        # Performance-Indizes für häufige Abfragen
+        await db.users.create_index("username", unique=True)
+        await db.users.create_index("id", unique=True)
+        await db.users.create_index("member_id")
+        await db.members.create_index("id", unique=True)
+        await db.members.create_index("status")
+        await db.fines.create_index("id", unique=True)
+        await db.fines.create_index([("fiscal_year", 1), ("member_id", 1)])
+        await db.fines.create_index("member_id")
+        await db.fines.create_index([("date", -1)])
+        await db.fine_types.create_index("id", unique=True)
+        await db.audit_logs.create_index([("timestamp", -1)])
+        await db.audit_logs.create_index("action")
+        logger.info("Datenbank-Indizes erstellt")
         
     except Exception as e:
         logger.error(f"Fehler bei der Initialisierung: {e}")

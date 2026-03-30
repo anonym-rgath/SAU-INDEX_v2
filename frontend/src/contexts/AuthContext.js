@@ -103,21 +103,24 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, loginTime, logout]);
 
-  // Idle Timer und Activity Listener
+  // Idle Timer und Activity Listener (debounced)
   useEffect(() => {
     if (token) {
-      // Events die als Aktivität zählen
-      const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+      const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+      let debounceTimer = null;
       
       const handleActivity = () => {
-        resetIdleTimer();
+        if (debounceTimer) return;
+        debounceTimer = setTimeout(() => {
+          debounceTimer = null;
+          resetIdleTimer();
+        }, 2000);
       };
       
       events.forEach(event => {
         document.addEventListener(event, handleActivity, { passive: true });
       });
       
-      // Initial Timer starten
       resetIdleTimer();
       
       return () => {
@@ -125,6 +128,7 @@ export const AuthProvider = ({ children }) => {
           document.removeEventListener(event, handleActivity);
         });
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        if (debounceTimer) clearTimeout(debounceTimer);
       };
     }
   }, [token, resetIdleTimer]);
