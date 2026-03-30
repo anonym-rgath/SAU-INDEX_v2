@@ -50,7 +50,7 @@ Die Rheinzelmänner Verwaltung ist eine Full-Stack-Webanwendung zur Verwaltung v
               |   - /api/* -> Backend       |
               +--------------+--------------+
                              |
-                      intern Port 8001
+                      intern Port 8000
                              |
               +--------------v--------------+
               |   Backend Container         |

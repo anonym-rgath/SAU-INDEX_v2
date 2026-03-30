@@ -35,7 +35,7 @@ Detaillierte Anleitung zur Installation auf einem Raspberry Pi 4.
               |   - HTTP -> HTTPS Redirect  |
               +--------------+--------------+
                              |
-                      intern Port 8001
+                      intern Port 8000
                              |
               +--------------v--------------+
               |   Backend Container         |
@@ -334,7 +334,7 @@ docker compose up -d
 | Service | Image | Port (intern) |
 |---------|-------|---------------|
 | Frontend | node:20-alpine + nginx:alpine | 80 |
-| Backend | python:3.11-slim | 8001 |
+| Backend | python:3.11-slim | 8000 |
 | MongoDB | mongo:4.4.18 | 27017 |
 
 ### Warum MongoDB 4.4.18?
