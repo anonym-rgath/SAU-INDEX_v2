@@ -34,10 +34,20 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 api_router = APIRouter(prefix="/api")
 
+# Logging Setup (früh initialisieren für Sicherheitswarnungen)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Sichere JWT-Konfiguration
-JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
+JWT_SECRET = os.environ.get('JWT_SECRET')
+if not JWT_SECRET or JWT_SECRET == 'change-this-secret-in-production':
+    JWT_SECRET = secrets.token_hex(32)
+    logger.warning("SECURITY: Kein JWT_SECRET konfiguriert - verwende zufälligen Schlüssel")
 JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_HOURS = 24
+JWT_EXPIRATION_HOURS = 8  # Reduziert von 24 auf 8 Stunden für mehr Sicherheit
 
 # Verstärktes Passwort-Hashing (bcrypt mit 12 Runden)
 pwd_context = CryptContext(
@@ -52,11 +62,23 @@ MAX_LOGIN_ATTEMPTS = 5  # Maximale Fehlversuche
 LOCKOUT_DURATION_MINUTES = 15  # Sperrzeit in Minuten
 LOGIN_ATTEMPT_WINDOW_MINUTES = 30  # Zeitfenster für Fehlversuche
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Passwort-Validierung
+import re
+
+def validate_password(password: str) -> tuple[bool, str]:
+    """
+    Validiert Passwort nach aktuellen Sicherheitsrichtlinien.
+    Mindestens 8 Zeichen, 1 Großbuchstabe, 1 Kleinbuchstabe, 1 Zahl.
+    """
+    if len(password) < 8:
+        return False, "Passwort muss mindestens 8 Zeichen lang sein"
+    if not re.search(r'[A-Z]', password):
+        return False, "Passwort muss mindestens einen Großbuchstaben enthalten"
+    if not re.search(r'[a-z]', password):
+        return False, "Passwort muss mindestens einen Kleinbuchstaben enthalten"
+    if not re.search(r'\d', password):
+        return False, "Passwort muss mindestens eine Zahl enthalten"
+    return True, ""
 
 # Fiscal year configuration
 FISCAL_YEAR_START_MONTH = 8  # August
@@ -429,6 +451,19 @@ async def login(request: Request, login_data: LoginRequest):
         member_id=user_doc.get('member_id')
     )
 
+@api_router.post("/auth/logout")
+async def logout(request: Request, auth=Depends(verify_token)):
+    """Logout - Token wird clientseitig gelöscht, hier nur Audit Log"""
+    ip_address = get_remote_address(request)
+    await log_audit(
+        action=AuditAction.LOGOUT,
+        resource_type="auth",
+        user_id=auth.get('sub'),
+        username=auth.get('username'),
+        ip_address=ip_address
+    )
+    return {"message": "Logout erfolgreich"}
+
 @api_router.put("/auth/change-password")
 async def change_password(request: Request, data: ChangePasswordRequest, auth=Depends(verify_token)):
     ip_address = get_remote_address(request)
@@ -453,8 +488,9 @@ async def change_password(request: Request, data: ChangePasswordRequest, auth=De
         raise HTTPException(status_code=400, detail="Aktuelles Passwort ist falsch")
     
     # Neues Passwort validieren
-    if len(data.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Neues Passwort muss mindestens 6 Zeichen lang sein")
+    is_valid, error_msg = validate_password(data.new_password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
     
     # Neues Passwort hashen und speichern
     new_password_hash = pwd_context.hash(data.new_password)
@@ -511,8 +547,9 @@ async def create_user(request: Request, data: UserCreateRequest, auth=Depends(re
         raise HTTPException(status_code=400, detail="Benutzername existiert bereits")
     
     # Passwort validieren
-    if len(data.password) < 6:
-        raise HTTPException(status_code=400, detail="Passwort muss mindestens 6 Zeichen lang sein")
+    is_valid, error_msg = validate_password(data.password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
     
     # Bei Mitglied-Rolle muss member_id angegeben werden, bei Vorstand und Spieß optional
     if data.role == UserRole.mitglied:
@@ -1127,9 +1164,9 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=os.environ.get('CORS_ORIGINS', 'https://rhnzl.sau-index.de').split(','),
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 @app.on_event("startup")
