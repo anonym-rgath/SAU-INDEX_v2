@@ -14,6 +14,7 @@ const Fines = lazy(() => import('./pages/Fines'));
 const Statistics = lazy(() => import('./pages/Statistics'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+const CalendarPage = lazy(() => import('./pages/Calendar'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -75,6 +76,7 @@ function App() {
               <Route path="members" element={<NoMitgliedRoute><Members /></NoMitgliedRoute>} />
               <Route path="fine-types" element={<NoMitgliedRoute><FineTypes /></NoMitgliedRoute>} />
               <Route path="fines" element={<DashboardRoute><Fines /></DashboardRoute>} />
+              <Route path="calendar" element={<CalendarPage />} />
               <Route path="statistics" element={<NoMitgliedRoute><Statistics /></NoMitgliedRoute>} />
               <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
               <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />

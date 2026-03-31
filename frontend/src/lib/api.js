@@ -47,4 +47,12 @@ export const api = {
   auditLogs: {
     getAll: (limit = 500) => axios.get(`${API_URL}/audit-logs`, { params: { limit } }),
   },
+  events: {
+    getAll: () => axios.get(`${API_URL}/events`),
+    create: (data) => axios.post(`${API_URL}/events`, data),
+    update: (id, data) => axios.put(`${API_URL}/events/${id}`, data),
+    delete: (id) => axios.delete(`${API_URL}/events/${id}`),
+    respond: (id, data) => axios.post(`${API_URL}/events/${id}/respond`, data),
+    checkFines: () => axios.post(`${API_URL}/events/check-fines`),
+  },
 };

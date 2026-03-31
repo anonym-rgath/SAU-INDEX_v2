@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, User, Key, UserCog, Shield } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, User, Key, UserCog, Shield, CalendarDays } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -21,6 +21,7 @@ const TopBar = () => {
   // Navigation basierend auf Rolle
   const allNavItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showForAll: true },
+    { path: '/calendar', icon: CalendarDays, label: 'Termine', showForAll: true },
     { path: '/members', icon: Users, label: 'Mitglieder', hideForMitglied: true },
     { path: '/statistics', icon: BarChart3, label: 'Statistiken', hideForMitglied: true },
     { path: '/fines', icon: Receipt, label: 'Strafenübersicht', hideForMitglied: true, hideForVorstand: true },

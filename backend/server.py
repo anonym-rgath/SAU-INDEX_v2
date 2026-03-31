@@ -257,6 +257,47 @@ class Statistics(BaseModel):
     laemmchen: Optional[RankingEntry] = None
     ranking: List[RankingEntry]
 
+# ============ EVENT / KALENDER MODELS ============
+
+class EventCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    date: str  # ISO datetime string
+    location: Optional[str] = None
+    fine_amount: Optional[float] = None
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    date: Optional[str] = None
+    location: Optional[str] = None
+    fine_amount: Optional[float] = None
+
+class EventResponse(BaseModel):
+    response: str  # "zugesagt" | "abgesagt"
+
+class EventResponseOut(BaseModel):
+    member_id: str
+    member_name: str
+    response: str
+    responded_at: str
+
+class EventOut(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    date: str
+    location: Optional[str] = None
+    fine_amount: Optional[float] = None
+    fine_type_id: Optional[str] = None
+    created_by: str
+    created_at: str
+    response_open: bool = False
+    response_deadline_passed: bool = False
+    my_response: Optional[str] = None
+    responses: Optional[List[EventResponseOut]] = None
+    response_stats: Optional[dict] = None
+
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
@@ -1164,12 +1205,369 @@ async def get_audit_logs(
     logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return {"logs": logs, "total": len(logs)}
 
+# ============ EVENT / KALENDER ENDPOINTS ============
+
+async def _get_member_name(member_id: str) -> str:
+    m = await db.members.find_one({"id": member_id}, {"_id": 0, "firstName": 1, "lastName": 1})
+    if m:
+        return f"{m.get('firstName', '')} {m.get('lastName', '')}".strip()
+    return "Unbekannt"
+
+async def _check_and_assign_fines():
+    """Prüft alle Events und vergibt automatisch Strafen bei fehlender/verspäteter Rückmeldung"""
+    now = datetime.now(timezone.utc)
+    
+    # Events deren Deadline (24h vorher) abgelaufen ist und die noch nicht verarbeitet wurden
+    events = await db.events.find(
+        {"fines_processed": {"$ne": True}, "fine_amount": {"$gt": 0}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    for event in events:
+        event_date = datetime.fromisoformat(event['date'])
+        if event_date.tzinfo is None:
+            event_date = event_date.replace(tzinfo=timezone.utc)
+        deadline = event_date - timedelta(hours=24)
+        
+        if now < deadline:
+            continue
+        
+        # Alle aktiven Mitglieder
+        active_members = await db.members.find(
+            {"status": {"$in": ["aktiv", "passiv"]}},
+            {"_id": 0, "id": 1, "firstName": 1, "lastName": 1}
+        ).to_list(1000)
+        
+        # Alle Antworten für dieses Event
+        responses = await db.event_responses.find(
+            {"event_id": event['id']},
+            {"_id": 0}
+        ).to_list(1000)
+        response_map = {r['member_id']: r for r in responses}
+        
+        fine_type_id = event.get('fine_type_id')
+        if not fine_type_id:
+            continue
+        
+        fine_type = await db.fine_types.find_one({"id": fine_type_id}, {"_id": 0})
+        if not fine_type:
+            continue
+        
+        for member in active_members:
+            member_id = member['id']
+            resp = response_map.get(member_id)
+            
+            should_fine = False
+            fine_reason = ""
+            
+            if not resp:
+                # Keine Rückmeldung
+                should_fine = True
+                fine_reason = f"Keine Rückmeldung für: {event['title']}"
+            elif resp['response'] == 'abgesagt':
+                # Zu spät abgesagt (weniger als 24h vorher)
+                responded_at = datetime.fromisoformat(resp['responded_at'])
+                if responded_at.tzinfo is None:
+                    responded_at = responded_at.replace(tzinfo=timezone.utc)
+                if responded_at > deadline:
+                    should_fine = True
+                    fine_reason = f"Verspätete Absage für: {event['title']}"
+            # zugesagt = keine Strafe
+            
+            if should_fine:
+                # Prüfen ob bereits eine Strafe für dieses Event + Mitglied existiert
+                existing = await db.fines.find_one({
+                    "member_id": member_id,
+                    "fine_type_id": fine_type_id,
+                    "notes": {"$regex": f"Event: {event['id']}"}
+                })
+                if existing:
+                    continue
+                
+                fine_date = event_date
+                fine_data = {
+                    "id": str(uuid.uuid4()),
+                    "member_id": member_id,
+                    "fine_type_id": fine_type_id,
+                    "fine_type_label": fine_type['label'],
+                    "amount": event['fine_amount'],
+                    "fiscal_year": get_fiscal_year(fine_date),
+                    "date": fine_date.isoformat(),
+                    "notes": f"{fine_reason} | Event: {event['id']}"
+                }
+                await db.fines.insert_one(fine_data)
+                member_name = f"{member.get('firstName', '')} {member.get('lastName', '')}".strip()
+                logger.info(f"AUTO-STRAFE: {member_name} - {fine_reason} - {event['fine_amount']}€")
+        
+        # Event als verarbeitet markieren
+        await db.events.update_one({"id": event['id']}, {"$set": {"fines_processed": True}})
+    
+    return True
+
+@api_router.post("/events")
+async def create_event(input: EventCreate, request: Request, auth=Depends(require_any_role)):
+    """Termin erstellen (Admin, Spieß, Vorstand)"""
+    event_date = datetime.fromisoformat(input.date.replace('Z', '+00:00'))
+    
+    event_id = str(uuid.uuid4())
+    fine_type_id = None
+    
+    # Strafart für diesen Termin erstellen wenn Betrag angegeben
+    if input.fine_amount and input.fine_amount > 0:
+        fine_type_id = str(uuid.uuid4())
+        fine_type_doc = {
+            "id": fine_type_id,
+            "label": f"Termin: {input.title}",
+            "amount": input.fine_amount,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "event_id": event_id
+        }
+        await db.fine_types.insert_one(fine_type_doc)
+    
+    event_doc = {
+        "id": event_id,
+        "title": input.title,
+        "description": input.description or "",
+        "date": event_date.isoformat(),
+        "location": input.location or "",
+        "fine_amount": input.fine_amount or 0,
+        "fine_type_id": fine_type_id,
+        "created_by": auth.get('username', ''),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "fines_processed": False
+    }
+    await db.events.insert_one(event_doc)
+    
+    await log_audit(
+        AuditAction.CREATE, "event", event_id,
+        auth.get('user_id'), auth.get('username'),
+        f"Termin erstellt: {input.title}",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": "Termin erstellt", "id": event_id}
+
+@api_router.get("/events")
+async def get_events(auth=Depends(require_authenticated)):
+    """Alle Termine laden + automatische Strafenprüfung"""
+    # Automatische Strafenprüfung bei jedem Abruf
+    await _check_and_assign_fines()
+    
+    events = await db.events.find({}, {"_id": 0}).sort("date", 1).to_list(1000)
+    now = datetime.now(timezone.utc)
+    role = auth.get('role')
+    member_id = auth.get('member_id')
+    
+    # Alle Mitglieder für Namen-Lookup
+    members = await db.members.find(
+        {"status": {"$in": ["aktiv", "passiv"]}},
+        {"_id": 0, "id": 1, "firstName": 1, "lastName": 1}
+    ).to_list(1000)
+    member_map = {m['id']: f"{m.get('firstName', '')} {m.get('lastName', '')}".strip() for m in members}
+    
+    result = []
+    for event in events:
+        event_date = datetime.fromisoformat(event['date'])
+        if event_date.tzinfo is None:
+            event_date = event_date.replace(tzinfo=timezone.utc)
+        response_open_from = event_date - timedelta(days=30)
+        response_deadline = event_date - timedelta(hours=24)
+        
+        is_response_open = now >= response_open_from and now <= response_deadline
+        deadline_passed = now > response_deadline
+        
+        out = EventOut(
+            id=event['id'],
+            title=event['title'],
+            description=event.get('description', ''),
+            date=event['date'],
+            location=event.get('location', ''),
+            fine_amount=event.get('fine_amount', 0),
+            fine_type_id=event.get('fine_type_id'),
+            created_by=event.get('created_by', ''),
+            created_at=event.get('created_at', ''),
+            response_open=is_response_open,
+            response_deadline_passed=deadline_passed,
+        )
+        
+        # Eigene Antwort laden (für alle Rollen mit member_id)
+        if member_id:
+            my_resp = await db.event_responses.find_one(
+                {"event_id": event['id'], "member_id": member_id},
+                {"_id": 0}
+            )
+            if my_resp:
+                out.my_response = my_resp['response']
+        
+        # Erweiterte Übersicht für Admin, Spieß, Vorstand
+        if role in ['admin', 'spiess', 'vorstand']:
+            responses = await db.event_responses.find(
+                {"event_id": event['id']},
+                {"_id": 0}
+            ).to_list(1000)
+            
+            resp_list = []
+            responded_ids = set()
+            zugesagt = 0
+            abgesagt = 0
+            for r in responses:
+                responded_ids.add(r['member_id'])
+                name = member_map.get(r['member_id'], 'Unbekannt')
+                resp_list.append(EventResponseOut(
+                    member_id=r['member_id'],
+                    member_name=name,
+                    response=r['response'],
+                    responded_at=r['responded_at']
+                ))
+                if r['response'] == 'zugesagt':
+                    zugesagt += 1
+                else:
+                    abgesagt += 1
+            
+            keine_antwort = len(member_map) - len(responded_ids)
+            
+            out.responses = resp_list
+            out.response_stats = {
+                "zugesagt": zugesagt,
+                "abgesagt": abgesagt,
+                "keine_antwort": keine_antwort,
+                "gesamt": len(member_map)
+            }
+        
+        result.append(out)
+    
+    return result
+
+@api_router.get("/events/{event_id}")
+async def get_event(event_id: str, auth=Depends(require_authenticated)):
+    """Einzelnen Termin laden"""
+    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+    return event
+
+@api_router.put("/events/{event_id}")
+async def update_event(event_id: str, input: EventUpdate, request: Request, auth=Depends(require_any_role)):
+    """Termin aktualisieren (Admin, Spieß, Vorstand)"""
+    existing = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+    
+    update_data = {k: v for k, v in input.model_dump().items() if v is not None}
+    
+    if 'date' in update_data:
+        update_data['date'] = datetime.fromisoformat(update_data['date'].replace('Z', '+00:00')).isoformat()
+    
+    # Fine amount update -> update fine type too
+    if 'fine_amount' in update_data and existing.get('fine_type_id'):
+        await db.fine_types.update_one(
+            {"id": existing['fine_type_id']},
+            {"$set": {"amount": update_data['fine_amount']}}
+        )
+    
+    if 'title' in update_data and existing.get('fine_type_id'):
+        await db.fine_types.update_one(
+            {"id": existing['fine_type_id']},
+            {"$set": {"label": f"Termin: {update_data['title']}"}}
+        )
+    
+    if update_data:
+        await db.events.update_one({"id": event_id}, {"$set": update_data})
+    
+    await log_audit(
+        AuditAction.UPDATE, "event", event_id,
+        auth.get('user_id'), auth.get('username'),
+        f"Termin aktualisiert: {existing.get('title', '')}",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": "Termin aktualisiert"}
+
+@api_router.delete("/events/{event_id}")
+async def delete_event(event_id: str, request: Request, auth=Depends(require_any_role)):
+    """Termin löschen (Admin, Spieß, Vorstand)"""
+    existing = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+    
+    # Event-spezifische Strafart löschen
+    if existing.get('fine_type_id'):
+        await db.fine_types.delete_one({"id": existing['fine_type_id']})
+    
+    # Antworten löschen
+    await db.event_responses.delete_many({"event_id": event_id})
+    
+    await db.events.delete_one({"id": event_id})
+    
+    await log_audit(
+        AuditAction.DELETE, "event", event_id,
+        auth.get('user_id'), auth.get('username'),
+        f"Termin gelöscht: {existing.get('title', '')}",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": "Termin gelöscht"}
+
+@api_router.post("/events/{event_id}/respond")
+async def respond_to_event(event_id: str, input: EventResponse, request: Request, auth=Depends(require_authenticated)):
+    """Zu-/Absage für einen Termin"""
+    member_id = auth.get('member_id')
+    if not member_id:
+        raise HTTPException(status_code=400, detail="Kein Mitglied verknüpft")
+    
+    if input.response not in ['zugesagt', 'abgesagt']:
+        raise HTTPException(status_code=400, detail="Ungültige Antwort")
+    
+    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+    
+    event_date = datetime.fromisoformat(event['date'])
+    if event_date.tzinfo is None:
+        event_date = event_date.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    response_open_from = event_date - timedelta(days=30)
+    response_deadline = event_date - timedelta(hours=24)
+    
+    if now < response_open_from:
+        raise HTTPException(status_code=400, detail="Rückmeldung ist noch nicht möglich (frühestens 1 Monat vorher)")
+    
+    if now > response_deadline:
+        raise HTTPException(status_code=400, detail="Rückmeldefrist abgelaufen (24h vor Termin)")
+    
+    # Upsert: vorhandene Antwort überschreiben
+    await db.event_responses.update_one(
+        {"event_id": event_id, "member_id": member_id},
+        {"$set": {
+            "event_id": event_id,
+            "member_id": member_id,
+            "response": input.response,
+            "responded_at": now.isoformat()
+        }},
+        upsert=True
+    )
+    
+    member_name = await _get_member_name(member_id)
+    await log_audit(
+        AuditAction.UPDATE, "event_response", event_id,
+        auth.get('user_id'), auth.get('username'),
+        f"{member_name}: {input.response} für {event['title']}",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": f"Erfolgreich {input.response}"}
+
+@api_router.post("/events/check-fines")
+async def trigger_fine_check(auth=Depends(require_admin_or_spiess)):
+    """Manuelle Strafenprüfung auslösen"""
+    await _check_and_assign_fines()
+    return {"message": "Strafenprüfung abgeschlossen"}
+
 # Health Check Endpoint (für Docker und Monitoring)
 @app.get("/health")
 async def health_check():
     """Health check endpoint für Docker und Load Balancer"""
     try:
-        # Prüfe MongoDB Verbindung
         await client.admin.command('ping')
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
@@ -1227,6 +1625,13 @@ async def startup_db_client():
         await db.fine_types.create_index("id", unique=True)
         await db.audit_logs.create_index([("timestamp", -1)])
         await db.audit_logs.create_index("action")
+        
+        # Event-Indizes
+        await db.events.create_index("id", unique=True)
+        await db.events.create_index([("date", 1)])
+        await db.events.create_index("fines_processed")
+        await db.event_responses.create_index([("event_id", 1), ("member_id", 1)], unique=True)
+        await db.event_responses.create_index("event_id")
         logger.info("Datenbank-Indizes erstellt")
         
     except Exception as e:
