@@ -34,6 +34,7 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
       <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">{event.title}</DialogTitle>
+          <p className="text-sm text-stone-500 sr-only">Termindetails und Rückmeldung</p>
         </DialogHeader>
 
         <ScrollArea className="flex-1 -mx-6 px-6">
