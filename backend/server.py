@@ -304,6 +304,9 @@ class EventOut(BaseModel):
     ics_uid: Optional[str] = None
     fine_enabled: Optional[bool] = False
 
+class EventFineAssign(BaseModel):
+    fine_type_id: str
+
 class ICSSettingsUpdate(BaseModel):
     ics_url: Optional[str] = None
     sync_enabled: Optional[bool] = None
@@ -1742,39 +1745,48 @@ async def manual_ics_sync(request: Request, auth=Depends(require_admin)):
     return result
 
 @api_router.put("/events/{event_id}/fine-toggle")
-async def toggle_event_fine(event_id: str, request: Request, auth=Depends(require_any_role)):
-    """Straflogik für einen (ICS-)Termin aktivieren/deaktivieren"""
+async def toggle_event_fine(event_id: str, request: Request, input: Optional[EventFineAssign] = None, auth=Depends(require_any_role)):
+    """Straflogik für einen Termin aktivieren (mit Strafenart) oder deaktivieren"""
     event = await db.events.find_one({"id": event_id}, {"_id": 0})
     if not event:
         raise HTTPException(status_code=404, detail="Termin nicht gefunden")
     
     currently_enabled = event.get('fine_enabled', False)
-    new_state = not currently_enabled
     
-    update_data = {"fine_enabled": new_state}
-    
-    if new_state and not event.get('fine_type_id') and event.get('fine_amount', 0) > 0:
-        fine_type_id = str(uuid.uuid4())
-        fine_type_doc = {
-            "id": fine_type_id,
-            "label": f"Termin: {event['title']}",
-            "amount": event['fine_amount'],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "event_id": event_id
-        }
-        await db.fine_types.insert_one(fine_type_doc)
-        update_data["fine_type_id"] = fine_type_id
-    
-    await db.events.update_one({"id": event_id}, {"$set": update_data})
+    if currently_enabled:
+        # Deaktivieren
+        await db.events.update_one({"id": event_id}, {"$set": {
+            "fine_enabled": False,
+            "fine_type_id": None,
+            "fine_amount": 0
+        }})
+        msg = "Straflogik deaktiviert"
+        new_state = False
+    else:
+        # Aktivieren - Strafenart muss angegeben werden
+        if not input or not input.fine_type_id:
+            raise HTTPException(status_code=400, detail="Strafenart muss angegeben werden")
+        
+        fine_type = await db.fine_types.find_one({"id": input.fine_type_id}, {"_id": 0})
+        if not fine_type:
+            raise HTTPException(status_code=404, detail="Strafenart nicht gefunden")
+        
+        await db.events.update_one({"id": event_id}, {"$set": {
+            "fine_enabled": True,
+            "fine_type_id": input.fine_type_id,
+            "fine_amount": fine_type.get('amount', 0)
+        }})
+        msg = f"Straflogik aktiviert: {fine_type['label']} ({fine_type.get('amount', 0)}€)"
+        new_state = True
     
     await log_audit(
         AuditAction.UPDATE, "event", event_id,
         auth.get('user_id'), auth.get('username'),
-        f"Straflogik {'aktiviert' if new_state else 'deaktiviert'} für: {event['title']}",
+        f"{msg} für: {event['title']}",
         request.client.host if request.client else None
     )
     
-    return {"message": f"Straflogik {'aktiviert' if new_state else 'deaktiviert'}", "fine_enabled": new_state}
+    return {"message": msg, "fine_enabled": new_state}
 
 # Health Check Endpoint (für Docker und Monitoring)
 @app.get("/health")

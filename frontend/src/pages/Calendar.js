@@ -83,13 +83,13 @@ const CalendarPage = () => {
     }
   };
 
-  const handleToggleFine = async (eventId) => {
+  const handleToggleFine = async (eventId, data) => {
     try {
-      const res = await api.events.toggleFine(eventId);
+      const res = await api.events.toggleFine(eventId, data);
       toast.success(res.data.message);
       loadEvents();
     } catch (err) {
-      toast.error('Fehler beim Umschalten der Straflogik');
+      toast.error(err.response?.data?.detail || 'Fehler beim Umschalten der Straflogik');
     }
   };
 

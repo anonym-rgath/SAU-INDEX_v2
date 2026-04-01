@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../lib/api';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
@@ -8,10 +9,39 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import { CalendarDays, Clock, MapPin, AlertTriangle, Check, X, Pencil, Trash2, Users, Globe, Shield } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
 const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDelete, onToggleFine, canSeeResponses, userMemberId }) => {
+  const [fineTypes, setFineTypes] = useState([]);
+  const [selectedFineType, setSelectedFineType] = useState('');
+  const [showFineSelect, setShowFineSelect] = useState(false);
+
+  useEffect(() => {
+    if (open && onToggleFine && !event?.fine_enabled) {
+      loadFineTypes();
+    }
+    setShowFineSelect(false);
+    setSelectedFineType('');
+  }, [open, event, onToggleFine]);
+
+  const loadFineTypes = async () => {
+    try {
+      const res = await api.fineTypes.getAll();
+      // Nur Strafenarten ohne event_id (keine auto-erstellten)
+      setFineTypes(res.data.filter(ft => !ft.event_id));
+    } catch (err) {
+      // ignore
+    }
+  };
+
   if (!event) return null;
 
   const eventDate = new Date(event.date);
@@ -27,7 +57,25 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
     return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
   };
 
+  const handleToggleFine = () => {
+    if (event.fine_enabled) {
+      // Deaktivieren - kein fine_type_id nötig
+      onToggleFine(event.id, null);
+    } else {
+      // Aktivieren - Strafenart-Auswahl zeigen
+      setShowFineSelect(true);
+    }
+  };
+
+  const handleConfirmFine = () => {
+    if (!selectedFineType) return;
+    onToggleFine(event.id, { fine_type_id: selectedFineType });
+    setShowFineSelect(false);
+    setSelectedFineType('');
+  };
+
   const stats = event.response_stats;
+  const selectedFt = fineTypes.find(ft => ft.id === selectedFineType);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,7 +112,8 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
               <p className="text-sm text-stone-600 bg-stone-50 rounded-xl p-3">{event.description}</p>
             )}
 
-            {event.fine_amount > 0 && (
+            {/* Fine status */}
+            {event.fine_enabled && event.fine_amount > 0 && (
               <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-xl p-3">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span className="text-sm">Strafe bei fehlender/verspäteter Rückmeldung: <strong>{formatCurrency(event.fine_amount)}</strong></span>
@@ -85,14 +134,14 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
             {userMemberId && event.response_open && !isPast && (
               <div className="flex gap-2">
                 <Button
-                  data-testid={`detail-btn-zusagen`}
+                  data-testid="detail-btn-zusagen"
                   onClick={() => onRespond(event.id, 'zugesagt')}
                   className={`flex-1 h-11 rounded-full ${event.my_response === 'zugesagt' ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'}`}
                 >
                   <Check className="w-4 h-4 mr-2" /> Zusagen
                 </Button>
                 <Button
-                  data-testid={`detail-btn-absagen`}
+                  data-testid="detail-btn-absagen"
                   onClick={() => onRespond(event.id, 'abgesagt')}
                   className={`flex-1 h-11 rounded-full ${event.my_response === 'abgesagt' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'}`}
                 >
@@ -140,20 +189,59 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
                 </div>
               </div>
             )}
+
+            {/* Fine Type Select (when activating) */}
+            {showFineSelect && (
+              <div className="space-y-3 bg-amber-50 rounded-xl p-4">
+                <p className="text-sm font-medium text-amber-800">Strafenart zuweisen</p>
+                <Select value={selectedFineType} onValueChange={setSelectedFineType}>
+                  <SelectTrigger data-testid="fine-type-select" className="bg-white">
+                    <SelectValue placeholder="Strafenart wählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fineTypes.map(ft => (
+                      <SelectItem key={ft.id} value={ft.id}>
+                        {ft.label} ({formatCurrency(ft.amount)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedFt && (
+                  <p className="text-xs text-amber-600">Strafe: {formatCurrency(selectedFt.amount)} pro Verstoß</p>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    data-testid="confirm-fine-button"
+                    onClick={handleConfirmFine}
+                    disabled={!selectedFineType}
+                    className="flex-1 h-9 rounded-full bg-amber-600 text-white text-sm hover:bg-amber-700"
+                  >
+                    <Check className="w-4 h-4 mr-1" /> Zuweisen
+                  </Button>
+                  <Button
+                    onClick={() => setShowFineSelect(false)}
+                    variant="outline"
+                    className="h-9 rounded-full text-sm"
+                  >
+                    Abbrechen
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
         {/* Admin Actions */}
         {(onEdit || onDelete || onToggleFine) && (
           <div className="flex gap-2 pt-3 border-t border-stone-100">
-            {onToggleFine && (
+            {onToggleFine && !showFineSelect && (
               <Button
                 data-testid="toggle-fine-button"
-                onClick={() => onToggleFine(event.id)}
+                onClick={handleToggleFine}
                 variant="outline"
                 className={`flex-1 h-10 rounded-full text-sm ${event.fine_enabled ? 'text-amber-700 border-amber-200 bg-amber-50' : 'text-stone-500'}`}
               >
-                <Shield className="w-4 h-4 mr-1" /> {event.fine_enabled ? 'Strafe aktiv' : 'Strafe aktivieren'}
+                <Shield className="w-4 h-4 mr-1" /> {event.fine_enabled ? 'Strafe deaktivieren' : 'Strafe zuweisen'}
               </Button>
             )}
             {onEdit && (
