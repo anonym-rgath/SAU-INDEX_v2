@@ -24,6 +24,9 @@ export const api = {
     create: (data) => axios.post(`${API_URL}/members`, data),
     update: (id, data) => axios.put(`${API_URL}/members/${id}`, data),
     delete: (id) => axios.delete(`${API_URL}/members/${id}`),
+    enableAccess: (id, data) => axios.post(`${API_URL}/members/${id}/access`, data),
+    disableAccess: (id) => axios.delete(`${API_URL}/members/${id}/access`),
+    updateAccess: (id, data) => axios.put(`${API_URL}/members/${id}/access`, data),
   },
   fineTypes: {
     getAll: () => axios.get(`${API_URL}/fine-types`),

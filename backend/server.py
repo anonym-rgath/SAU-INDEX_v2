@@ -823,6 +823,10 @@ async def reset_user_password(request: Request, user_id: str, data: ResetPasswor
 @api_router.get("/members")
 async def get_members(auth=Depends(verify_token)):
     members = await db.members.find({}, {"_id": 0}).to_list(1000)
+    # Alle Nicht-Admin-Users laden für Zuordnung
+    users = await db.users.find({"role": {"$ne": "admin"}}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    user_by_member = {u['member_id']: u for u in users if u.get('member_id')}
+
     result = []
     for member in members:
         if isinstance(member.get('created_at'), str):
@@ -835,6 +839,16 @@ async def get_members(auth=Depends(verify_token)):
         # Default Status auf 'aktiv' wenn leer oder nicht gesetzt
         if not member.get('status'):
             member['status'] = 'aktiv'
+        # User-Info anreichern
+        linked_user = user_by_member.get(member.get('id'))
+        if linked_user:
+            member['user_info'] = {
+                'user_id': linked_user['id'],
+                'username': linked_user['username'],
+                'role': linked_user['role'],
+            }
+        else:
+            member['user_info'] = None
         result.append(member)
     return result
 
@@ -926,6 +940,115 @@ async def delete_member(request: Request, member_id: str, auth=Depends(require_a
     )
     
     return {"message": "Mitglied gelöscht"}
+
+class MemberAccessRequest(BaseModel):
+    username: str
+    password: str
+    role: UserRole
+
+@api_router.post("/members/{member_id}/access")
+async def enable_member_access(member_id: str, data: MemberAccessRequest, request: Request, auth=Depends(require_admin)):
+    """App-Zugang für ein Mitglied aktivieren (User erstellen)"""
+    member = await db.members.find_one({"id": member_id}, {"_id": 0})
+    if not member:
+        raise HTTPException(status_code=404, detail="Mitglied nicht gefunden")
+    if member.get('status') == 'archiviert':
+        raise HTTPException(status_code=400, detail="Archivierte Mitglieder können keinen App-Zugang haben")
+
+    existing_user = await db.users.find_one({"member_id": member_id})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Mitglied hat bereits einen App-Zugang")
+
+    existing_username = await db.users.find_one({"username": data.username})
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Benutzername existiert bereits")
+
+    if data.role == UserRole.admin:
+        raise HTTPException(status_code=400, detail="Admin-Rolle kann nicht über Mitglieder vergeben werden")
+
+    is_valid, error_msg = validate_password(data.password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+
+    user_id = str(uuid.uuid4())
+    user_doc = {
+        "id": user_id,
+        "username": data.username,
+        "password_hash": pwd_context.hash(data.password),
+        "role": data.role.value,
+        "member_id": member_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user_doc)
+
+    name = f"{member.get('firstName', '')} {member.get('lastName', '')}"
+    await log_audit(
+        AuditAction.CREATE, "user_access", user_id,
+        auth.get('sub'), auth.get('username'),
+        f"App-Zugang aktiviert für {name} ({data.username}, {data.role.value})",
+        get_remote_address(request)
+    )
+    return {"message": "App-Zugang aktiviert", "user_id": user_id}
+
+@api_router.delete("/members/{member_id}/access")
+async def disable_member_access(member_id: str, request: Request, auth=Depends(require_admin)):
+    """App-Zugang für ein Mitglied deaktivieren (User löschen)"""
+    user = await db.users.find_one({"member_id": member_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Kein App-Zugang vorhanden")
+
+    await db.users.delete_one({"member_id": member_id})
+
+    member = await db.members.find_one({"id": member_id}, {"_id": 0})
+    name = f"{member.get('firstName', '')} {member.get('lastName', '')}" if member else "Unbekannt"
+    await log_audit(
+        AuditAction.DELETE, "user_access", user.get('id'),
+        auth.get('sub'), auth.get('username'),
+        f"App-Zugang deaktiviert für {name}",
+        get_remote_address(request)
+    )
+    return {"message": "App-Zugang deaktiviert"}
+
+class MemberAccessUpdateRequest(BaseModel):
+    username: Optional[str] = None
+    role: Optional[UserRole] = None
+    password: Optional[str] = None
+
+@api_router.put("/members/{member_id}/access")
+async def update_member_access(member_id: str, data: MemberAccessUpdateRequest, request: Request, auth=Depends(require_admin)):
+    """App-Zugang eines Mitglieds aktualisieren"""
+    user = await db.users.find_one({"member_id": member_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Kein App-Zugang vorhanden")
+
+    update = {}
+    if data.username and data.username != user.get('username'):
+        existing = await db.users.find_one({"username": data.username})
+        if existing:
+            raise HTTPException(status_code=400, detail="Benutzername existiert bereits")
+        update['username'] = data.username
+    if data.role:
+        if data.role == UserRole.admin:
+            raise HTTPException(status_code=400, detail="Admin-Rolle kann nicht über Mitglieder vergeben werden")
+        update['role'] = data.role.value
+    if data.password:
+        is_valid, error_msg = validate_password(data.password)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error_msg)
+        update['password_hash'] = pwd_context.hash(data.password)
+
+    if update:
+        await db.users.update_one({"member_id": member_id}, {"$set": update})
+
+    member = await db.members.find_one({"id": member_id}, {"_id": 0})
+    name = f"{member.get('firstName', '')} {member.get('lastName', '')}" if member else "Unbekannt"
+    await log_audit(
+        AuditAction.UPDATE, "user_access", user.get('id'),
+        auth.get('sub'), auth.get('username'),
+        f"App-Zugang aktualisiert für {name}",
+        get_remote_address(request)
+    )
+    return {"message": "App-Zugang aktualisiert"}
 
 @api_router.get("/fine-types", response_model=List[FineType])
 async def get_fine_types(auth=Depends(verify_token)):

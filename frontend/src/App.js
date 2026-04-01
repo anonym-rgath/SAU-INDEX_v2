@@ -81,7 +81,7 @@ function App() {
               <Route path="fines" element={<DashboardRoute><Fines /></DashboardRoute>} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="statistics" element={<NoMitgliedRoute><Statistics /></NoMitgliedRoute>} />
-              <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+              <Route path="users" element={<Navigate to="/members" replace />} />
               <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
               <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
             </Route>

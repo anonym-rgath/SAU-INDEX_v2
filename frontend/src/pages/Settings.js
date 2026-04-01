@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Globe, Moon, Languages, RefreshCw, Save } from 'lucide-react';
+import { Globe, Moon, Languages, RefreshCw, Save, ShieldCheck } from 'lucide-react';
 
 const SettingsSection = ({ icon: Icon, title, description, children }) => (
   <div data-testid={`settings-section-${title.toLowerCase().replace(/\s/g, '-')}`} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
@@ -195,6 +195,28 @@ const Settings = () => {
             Jetzt synchronisieren
           </Button>
         </div>
+      </SettingsSection>
+
+      {/* Rollen */}
+      <SettingsSection
+        icon={ShieldCheck}
+        title="Benutzerrollen"
+        description="Übersicht der verfügbaren Rollen und Berechtigungen"
+      >
+        <div className="space-y-3">
+          {[
+            { role: 'Admin', desc: 'Vollzugriff auf alle Bereiche. System-Account, nicht als Mitglied geführt.', color: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' },
+            { role: 'Spieß', desc: 'Kann Mitglieder, Strafen und Termine verwalten. Sieht eigene Strafen, wenn mit Mitglied verknüpft.', color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+            { role: 'Vorstand', desc: 'Kann Mitglieder und Termine verwalten. Sieht eigene Strafen, wenn mit Mitglied verknüpft.', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+            { role: 'Mitglied', desc: 'Nur-Lese-Zugriff. Sieht eigenes persönliches Dashboard mit Strafen und Terminen.', color: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+          ].map(r => (
+            <div key={r.role} className={`rounded-xl border p-3 ${r.color}`}>
+              <p className="font-semibold text-sm">{r.role}</p>
+              <p className="text-xs opacity-80 mt-0.5">{r.desc}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-stone-400 dark:text-stone-500">Rollen werden Mitgliedern über die Mitgliederverwaltung zugewiesen.</p>
       </SettingsSection>
     </div>
   );
