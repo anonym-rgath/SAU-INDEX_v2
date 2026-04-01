@@ -13,7 +13,7 @@ const TopBar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
-    const verwaltPaths = ['/members', '/fine-types', '/audit', '/settings'];
+    const verwaltPaths = ['/members', '/fine-types', '/audit', '/roles', '/settings'];
     return verwaltPaths.includes(window.location.pathname);
   });
 
@@ -39,9 +39,10 @@ const TopBar = () => {
 
   // Verwaltung sub-items
   const verwaltungItems = [
-    { path: '/members', icon: Users, label: 'Mitgliederverwaltung', hideForMitglied: true },
+    { path: '/members', icon: Users, label: 'Benutzerverwaltung', hideForMitglied: true },
     { path: '/fine-types', icon: Tag, label: 'Strafenarten', hideForMitglied: true },
     { path: '/audit', icon: Shield, label: 'Audit-Log', adminOnly: true },
+    { path: '/roles', icon: UserCog, label: 'Benutzerrollen', adminOnly: true },
     { path: '/settings', icon: SlidersHorizontal, label: 'Einstellungen', adminOnly: true },
   ].filter(filterItem);
 

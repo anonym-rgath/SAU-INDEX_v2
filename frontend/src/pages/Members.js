@@ -190,7 +190,7 @@ const Members = () => {
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">Mitgliederverwaltung</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">Benutzerverwaltung</h1>
             <p className="text-sm text-stone-500 mt-1">Stammdaten und App-Zugang aller Vereinsmitglieder</p>
           </div>
           {canManageMembers && (

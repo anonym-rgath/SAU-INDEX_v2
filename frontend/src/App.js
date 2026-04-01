@@ -17,6 +17,7 @@ const UserManagement = lazy(() => import('./pages/UserManagement'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Roles = lazy(() => import('./pages/Roles'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -84,6 +85,7 @@ function App() {
               <Route path="users" element={<Navigate to="/members" replace />} />
               <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
               <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
+              <Route path="roles" element={<AdminRoute><Roles /></AdminRoute>} />
             </Route>
             
             <Route path="*" element={<RoleBasedRedirect />} />
