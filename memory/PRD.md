@@ -5,88 +5,93 @@ Full-stack application for a "Schützenzug" (marksmen's platoon, "Rheinzelmänne
 
 ## Core Requirements
 - JWT-based authentication with four roles: `admin`, `spiess`, `vorstand`, `mitglied`
-- Unified member + user management (one page for both)
+- Unified member + user management with app-access toggle
 - Full CRUD for members, fines, fine types, and events
-- Role-dependent charts and personal/global rankings based on fiscal year
+- Role-dependent views and statistics
 - Calendar/Event system with RSVP and automatic fine assignment
 - ICS calendar sync from external source
 - Settings page with language, dark mode, ICS config, and roles overview
-- Strict security measures (brute-force protection, audit logging)
 - Docker-based deployment on Raspberry Pi 4 with Traefik reverse proxy
 
 ## Tech Stack
-- Frontend: React, Tailwind CSS, Shadcn/UI
+- Frontend: React, Tailwind CSS, Shadcn/UI, Recharts
 - Backend: Python, FastAPI, Pydantic, icalendar
 - Database: MongoDB (4.4.18)
 - Deployment: Docker, Raspberry Pi 4 (ARM64), Traefik, Cloudflare Tunnels
-- Storage: Docker root on 250GB SSD (`/mnt/ssd/docker`)
 
 ## Architecture
 ```
 /app/
 ├── backend/
-│   ├── server.py              // Monolith (~1900 lines)
+│   ├── server.py              // Monolith (~2000 lines)
 │   └── tests/
 ├── docker-compose.yml         // Traefik-ready
 ├── frontend/
 │   ├── nginx.traefik.conf
 │   └── src/
 │       ├── components/        // TopBar.js, EventDialog.js, EventDetailDialog.js
-│       ├── contexts/          // AuthContext.js, ThemeContext.js
-│       ├── pages/             // Members.js, Calendar.js, Dashboard.js, Settings.js
+│       ├── contexts/          // AuthContext.js (permissions), ThemeContext.js (dark mode)
+│       ├── pages/             // Members.js, Calendar.js, Dashboard.js, Settings.js, Statistics.js, StatisticsAdvanced.js
 │       └── lib/api.js
 ├── traefik/
 └── README.md
 ```
 
-## Completed Features
-- [x] JWT Auth with 4 roles (admin, spiess, vorstand, mitglied)
-- [x] **Unified Member + User management** (one page, app access toggle) - 2026-04-01
-- [x] Fine Types (Strafenarten) CRUD
-- [x] Fine assignment with fine type references
-- [x] Event fine type dropdown (replaced manual amount)
-- [x] Fiscal year-based ranking and statistics
-- [x] Spiess/Vorstand member linking (personal dashboards)
-- [x] Calendar/Event CRUD with RSVP (Zu-/Absagen)
-- [x] Automatic fine assignment for missing/late RSVPs
-- [x] ICS Calendar daily pull-sync
-- [x] Security hardening (strict passwords, short JWT, CORS, Nginx headers)
-- [x] Traefik reverse proxy setup
-- [x] SSD migration for Docker storage
-- [x] Performance optimizations (MongoDB indexes, aggregation pipelines, React.lazy)
-- [x] **Settings page** (Language, Dark Mode, ICS config, Roles overview) - 2026-04-01
-- [x] **Sidebar restructure** (Administration group with collapsible items) - 2026-04-01
-- [x] Benutzerverwaltung removed (merged into Mitgliederverwaltung) - 2026-04-01
+## Role-Based Access Control (RBAC)
 
-## Backlog (Prioritized)
+| Feature | Admin | Spieß | Vorstand | Mitglied |
+|---|---|---|---|---|
+| Dashboard | Full | Full | Full | Personal |
+| Termine | + Fine info | + Fine info | + Fine info | No fine info |
+| Strafenübersicht | All fines | All fines | Own fines | Own fines |
+| Statistiken | Personal | Personal | Personal | Personal |
+| Statistiken (Erweitert) | Full | Full | Anonymized | No access |
+| Benutzerverwaltung | Yes | Yes | Yes | No |
+| Strafenarten | Yes | Yes | Yes | No |
+| Audit-Log | Yes | No | No | No |
+| Einstellungen (ICS) | Yes | No | No | No |
+| Einstellungen (other) | Yes | Yes | Yes | Yes |
+| Benutzerrollen (view) | Yes | Yes | Yes | Yes |
+
+## Completed Features
+- [x] JWT Auth with 4 roles
+- [x] Unified Member + User management with app-access toggle
+- [x] Auto-disable access on member archival
+- [x] Fine Types CRUD + Event fine type dropdown
+- [x] Fiscal year-based ranking and statistics
+- [x] Calendar/Event CRUD with RSVP
+- [x] ICS Calendar daily pull-sync
+- [x] Security hardening
+- [x] Traefik reverse proxy + SSD migration
+- [x] Dark Mode (Settings, TopBar, Dashboard, Fines, Members, Statistics)
+- [x] Sidebar: Administration group with collapsible items
+- [x] Role-based view restrictions (2026-04-01):
+  - Mitglied: no fine info on events, own fines/stats only, no ICS settings
+  - Vorstand: personal stats + anonymized advanced stats, own fines
+  - Spieß: personal stats + full advanced stats, all fines
+- [x] Statistiken (Erweitert) page with charts
+- [x] Settings page with Benutzerrollen section
+
+## Backlog
 ### P2 - Upcoming
-- [ ] Automatic Database Backup (weekly `mongodump` via cron in Docker; 50GB partition at `/mnt/backups` ready)
-- [ ] Data Export (CSV/PDF) for rankings and fines
-- [ ] Dark Mode: extend to all pages (currently Settings + TopBar support it)
+- [ ] Automatic Database Backup (weekly `mongodump`)
+- [ ] Data Export (CSV/PDF)
+- [ ] Dark Mode: extend to Calendar event cards, FineTypes, AuditLogs pages
 
 ### P2 - Refactoring
-- [ ] Backend Refactoring: Split `server.py` monolith into FastAPI APIRouter modules
-
-## Key DB Schema
-- **users**: `{ id, username, password_hash, role, member_id? }` — admin has no member_id
-- **members**: `{ id, firstName, lastName, status }` — enriched with user_info via API
-- **fine_types**: `{ id, label, amount, event_id? }`
-- **fines**: `{ memberId, fine_type_id, fine_type_label, amount, date }`
-- **events**: `{ title, date, deadline, location, description, fine_enabled, fine_type_id?, fine_amount, source, ics_uid? }`
-- **event_responses**: `{ event_id, user_id, status, responded_at }`
+- [ ] Backend: Split `server.py` into APIRouter modules
 
 ## Key API Endpoints
-- `POST /api/auth/login` / `POST /api/auth/logout`
-- `GET/POST/PUT/DELETE /api/members`
-- `POST /api/members/{id}/access` — Enable app access (create user)
-- `PUT /api/members/{id}/access` — Update username/role/password
-- `DELETE /api/members/{id}/access` — Disable app access (delete user)
-- `GET/POST/PUT/DELETE /api/fine-types`
-- `GET/POST/PUT/DELETE /api/fines`
-- `GET/POST/PUT/DELETE /api/events`
-- `PUT /api/events/{id}/fine-toggle`
-- `GET/PUT /api/settings/ics`
-- `POST /api/settings/ics/sync`
+- Auth: `POST /api/auth/login`, `POST /api/auth/logout`
+- Members: `GET/POST/PUT/DELETE /api/members`
+- Member Access: `POST/PUT/DELETE /api/members/{id}/access`
+- Fine Types: `GET/POST/PUT/DELETE /api/fine-types`
+- Fines: `GET/POST/PUT/DELETE /api/fines` (filtered by role)
+- Events: `GET/POST/PUT/DELETE /api/events`
+- Event Fine Toggle: `PUT /api/events/{id}/fine-toggle`
+- Statistics: `GET /api/statistics` (admin/spiess/vorstand only)
+- Personal Stats: `GET /api/statistics/personal` (all roles)
+- Settings: `GET/PUT /api/settings/ics` (admin only)
 
 ## Credentials
 - Admin: `admin` / `admin123`
