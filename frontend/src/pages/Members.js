@@ -186,12 +186,12 @@ const Members = () => {
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="text-stone-500">Laden...</div></div>;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">Benutzerverwaltung</h1>
-            <p className="text-sm text-stone-500 mt-1">Stammdaten und App-Zugang aller Vereinsmitglieder</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Benutzerverwaltung</h1>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Stammdaten und App-Zugang aller Vereinsmitglieder</p>
           </div>
           {canManageMembers && (
             <Button data-testid="add-member-button" onClick={openAddDialog} className="h-11 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95 shadow-lg shadow-emerald-700/20">
@@ -216,20 +216,20 @@ const Members = () => {
           </Select>
         </div>
 
-        <Card className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
+        <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
           <div className="flex items-center gap-3 mb-1">
             <Users className="w-5 h-5 text-emerald-700" />
-            <h2 className="text-xl font-bold text-stone-900 tracking-tight">Alle Mitglieder</h2>
+            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Alle Mitglieder</h2>
             <span className="text-sm text-stone-500">({activeMembers.length})</span>
           </div>
           <p className="text-sm text-stone-500 mb-4 ml-8">Aktive und passive Vereinsmitglieder</p>
 
           <div className="space-y-2" data-testid="members-list">
             {activeMembers.length > 0 ? getSortedMembers(activeMembers).map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50 transition-colors min-h-[72px]" data-testid={`member-item-${member.id}`}>
+              <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 transition-colors min-h-[72px]" data-testid={`member-item-${member.id}`}>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-stone-900">{getFullName(member)}</p>
+                    <p className="font-bold text-stone-900 dark:text-stone-100">{getFullName(member)}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${member.status === 'aktiv' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600'}`}>
                       {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
                     </span>

@@ -19,7 +19,7 @@ import {
 import { CalendarDays, Clock, MapPin, AlertTriangle, Check, X, Pencil, Trash2, Users, Globe, Shield } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
-const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDelete, onToggleFine, canSeeResponses, userMemberId }) => {
+const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDelete, onToggleFine, canSeeResponses, canSeeFineInfo = true, userMemberId }) => {
   const [fineTypes, setFineTypes] = useState([]);
   const [selectedFineType, setSelectedFineType] = useState('');
   const [showFineSelect, setShowFineSelect] = useState(false);
@@ -113,7 +113,7 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
             )}
 
             {/* Fine status */}
-            {event.fine_enabled && event.fine_amount > 0 && (
+            {canSeeFineInfo && event.fine_enabled && event.fine_amount > 0 && (
               <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-xl p-3">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span className="text-sm">Strafe bei fehlender/verspäteter Rückmeldung: <strong>{formatCurrency(event.fine_amount)}</strong></span>

@@ -1180,8 +1180,9 @@ async def delete_fine(fine_id: str, auth=Depends(require_admin_or_spiess)):
 
 @api_router.get("/statistics", response_model=Statistics)
 async def get_statistics(fiscal_year: str, auth=Depends(require_authenticated)):
-    # Mitglieder haben keinen Zugriff auf die allgemeine Statistik
-    if auth.get('role') == 'mitglied':
+    # Nur Admin, Spieß und Vorstand haben Zugriff auf die allgemeine Statistik
+    role = auth.get('role')
+    if role not in ('admin', 'spiess', 'vorstand'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Berechtigung")
     
     # Nicht-archivierte Mitglieder laden (nur benötigte Felder)

@@ -41,6 +41,7 @@ export const api = {
     delete: (id) => axios.delete(`${API_URL}/fines/${id}`),
   },
   statistics: {
+    getAll: (fiscalYear) => axios.get(`${API_URL}/statistics`, { params: { fiscal_year: fiscalYear } }),
     getByFiscalYear: (fiscalYear) => axios.get(`${API_URL}/statistics`, { params: { fiscal_year: fiscalYear } }),
     getPersonal: (fiscalYear) => axios.get(`${API_URL}/statistics/personal`, { params: { fiscal_year: fiscalYear } }),
   },

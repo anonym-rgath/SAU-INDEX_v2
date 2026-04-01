@@ -20,7 +20,7 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 const Fines = () => {
-  const { canManageFines } = useAuth();
+  const { canManageFines, isMitglied } = useAuth();
   const [fiscalYear, setFiscalYear] = useState('');
   const [fiscalYears, setFiscalYears] = useState([]);
   const [fines, setFines] = useState([]);
@@ -119,15 +119,15 @@ const Fines = () => {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
               Strafenübersicht
             </h1>
             <p className="text-sm text-stone-500 mt-1">
-              Alle Strafeinträge
+              {isMitglied ? 'Meine Strafeinträge' : 'Alle Strafeinträge'}
             </p>
           </div>
           
@@ -157,11 +157,11 @@ const Fines = () => {
           </div>
         </div>
 
-        <Card className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
+        <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
           <div className="flex items-center gap-3 mb-4">
             <Receipt className="w-5 h-5 text-emerald-700" />
-            <h2 className="text-xl font-bold text-stone-900 tracking-tight">
-              Alle Strafen {fiscalYear}
+            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
+              Strafen {fiscalYear} {isMitglied ? '(Meine)' : ''}
             </h2>
           </div>
 
@@ -170,7 +170,7 @@ const Fines = () => {
               fines.map((fine) => (
                 <div
                   key={fine.id}
-                  className="flex items-start justify-between p-4 rounded-xl border border-stone-100 bg-stone-50 active:bg-stone-100 transition-colors"
+                  className="flex items-start justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 active:bg-stone-100 transition-colors"
                   data-testid={`fine-item-${fine.id}`}
                 >
                   <div className="flex-1 min-w-0">

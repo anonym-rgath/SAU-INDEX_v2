@@ -127,7 +127,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-stone-500">Laden...</div>
+        <div className="text-stone-500 dark:text-stone-400">Laden...</div>
       </div>
     );
   }
@@ -135,25 +135,25 @@ const Dashboard = () => {
   // Persönliches Dashboard (für Mitglied oder Vorstand mit Mitglied-Verknüpfung)
   if (showPersonalDashboard) {
     return (
-      <div className="min-h-screen bg-stone-50">
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
         <div className="max-w-2xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
                 Meine Übersicht
               </h1>
-              <p className="text-sm text-stone-500 mt-1">
+              <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
                 {personalStats?.member_name || user?.username}
               </p>
             </div>
             
-            <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-full px-3 h-10 shadow-sm">
+            <div className="flex items-center gap-2 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full px-3 h-10 shadow-sm">
               <Calendar className="w-4 h-4 text-stone-400" />
               <select
                 data-testid="fiscal-year-selector"
                 value={fiscalYear}
                 onChange={(e) => setFiscalYear(e.target.value)}
-                className="bg-transparent border-none outline-none text-stone-700 font-medium cursor-pointer text-base"
+                className="bg-transparent border-none outline-none text-stone-700 dark:text-stone-200 font-medium cursor-pointer text-base"
               >
                 {fiscalYears.map(fy => (
                   <option key={fy} value={fy}>{fy}</option>
@@ -176,7 +176,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div data-testid="my-total">
-              <p className="text-2xl font-bold text-stone-900 mb-0.5">
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-0.5">
                 {formatCurrency(personalStats?.total_amount || 0)}
               </p>
               <p className="text-sm text-stone-600">{personalStats?.total_fines || 0} Einträge</p>
@@ -184,10 +184,10 @@ const Dashboard = () => {
           </Card>
 
           {/* Meine Strafen */}
-          <Card className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
+          <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
             <div className="flex items-center gap-3 mb-4">
               <User className="w-5 h-5 text-emerald-700" />
-              <h2 className="text-xl font-bold text-stone-900 tracking-tight">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
                 Meine Strafen
               </h2>
             </div>
@@ -197,10 +197,10 @@ const Dashboard = () => {
                 recentFines.map((fine) => (
                   <div
                     key={fine.id}
-                    className="p-3 rounded-xl border border-stone-100 bg-stone-50"
+                    className="p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
                   >
                     <div className="flex items-start justify-between mb-1">
-                      <p className="font-semibold text-stone-900">
+                      <p className="font-semibold text-stone-900 dark:text-stone-100">
                         {fine.fine_type_label}
                       </p>
                       <span className="text-emerald-700 font-bold">
@@ -235,21 +235,21 @@ const Dashboard = () => {
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
               Dashboard
             </h1>
-            <p className="text-sm text-stone-500 mt-1">
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
               Ranking & Strafen
             </p>
           </div>
           
-          <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-full px-3 h-10 shadow-sm">
+          <div className="flex items-center gap-2 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full px-3 h-10 shadow-sm">
             <Calendar className="w-4 h-4 text-stone-400" />
             <select
               data-testid="fiscal-year-selector"
               value={fiscalYear}
               onChange={(e) => setFiscalYear(e.target.value)}
-              className="bg-transparent border-none outline-none text-stone-700 font-medium cursor-pointer text-base"
+              className="bg-transparent border-none outline-none text-stone-700 dark:text-stone-200 font-medium cursor-pointer text-base"
             >
               {fiscalYears.map(fy => (
                 <option key={fy} value={fy}>{fy}</option>
@@ -300,7 +300,7 @@ const Dashboard = () => {
             <div data-testid="sau-value">
               {statistics?.sau ? (
                 <>
-                  <p className="text-2xl font-bold text-stone-900 mb-0.5">
+                  <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-0.5">
                     {formatCurrency(statistics.sau.total)}
                   </p>
                   <p className="text-sm text-stone-600 truncate">{statistics.sau.member_name}</p>
@@ -326,7 +326,7 @@ const Dashboard = () => {
             <div data-testid="laemmchen-value">
               {statistics?.laemmchen ? (
                 <>
-                  <p className="text-2xl font-bold text-stone-900 mb-0.5">
+                  <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-0.5">
                     {formatCurrency(statistics.laemmchen.total)}
                   </p>
                   <p className="text-sm text-stone-600 truncate">{statistics.laemmchen.member_name}</p>
@@ -338,10 +338,10 @@ const Dashboard = () => {
           </Card>
         </div>
 
-            <Card className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 mb-6">
+            <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4 mb-6">
               <div className="flex items-center gap-3 mb-4">
                 <Trophy className="w-5 h-5 text-emerald-700" />
-                <h2 className="text-xl font-bold text-stone-900 tracking-tight">
+                <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
                   Ranking {fiscalYear}
                 </h2>
               </div>
@@ -351,14 +351,14 @@ const Dashboard = () => {
                   statistics.ranking.map((entry) => (
                     <div
                       key={entry.member_id}
-                      className="flex items-center gap-3 p-4 rounded-xl border border-stone-100 bg-stone-50 active:bg-stone-100 transition-colors min-h-[72px]"
+                      className="flex items-center gap-3 p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 active:bg-stone-100 transition-colors min-h-[72px]"
                       data-testid={`ranking-entry-${entry.rank}`}
                     >
                       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm flex-shrink-0">
                         #{entry.rank}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-stone-900 truncate">{entry.member_name}</p>
+                        <p className="font-bold text-stone-900 dark:text-stone-100 truncate">{entry.member_name}</p>
                         <p className="text-sm text-stone-500">
                           {formatCurrency(entry.total)}
                         </p>
@@ -373,8 +373,8 @@ const Dashboard = () => {
               </div>
             </Card>
 
-            <Card className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
-              <h2 className="text-xl font-bold text-stone-900 tracking-tight mb-4">
+            <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight mb-4">
                 Letzte Strafen
               </h2>
               
@@ -383,10 +383,10 @@ const Dashboard = () => {
                   recentFines.map((fine) => (
                     <div
                       key={fine.id}
-                      className="p-3 rounded-xl border border-stone-100 bg-stone-50"
+                      className="p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
                     >
                       <div className="flex items-start justify-between mb-1">
-                        <p className="font-semibold text-stone-900">
+                        <p className="font-semibold text-stone-900 dark:text-stone-100">
                           {getMemberName(fine.member_id)}
                         </p>
                         <span className="text-emerald-700 font-bold">
@@ -415,7 +415,7 @@ const Dashboard = () => {
                 <div className="flex items-center gap-3 mb-4">
                   <User className="w-5 h-5 text-emerald-700" />
                   <div>
-                    <h2 className="text-xl font-bold text-stone-900 tracking-tight">
+                    <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
                       Meine Strafen
                     </h2>
                     <p className="text-xs text-stone-500">
@@ -429,7 +429,7 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-stone-400 uppercase tracking-wider font-bold">Gesamt</p>
-                      <p className="text-xl font-bold text-stone-900">{formatCurrency(personalStats.total_amount || 0)}</p>
+                      <p className="text-xl font-bold text-stone-900 dark:text-stone-100">{formatCurrency(personalStats.total_amount || 0)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-stone-400 uppercase tracking-wider font-bold">Einträge</p>
@@ -446,7 +446,7 @@ const Dashboard = () => {
                         className="p-3 rounded-xl bg-white/50"
                       >
                         <div className="flex items-start justify-between mb-1">
-                          <p className="font-semibold text-stone-900">
+                          <p className="font-semibold text-stone-900 dark:text-stone-100">
                             {fine.fine_type_label}
                           </p>
                           <span className="text-emerald-700 font-bold">

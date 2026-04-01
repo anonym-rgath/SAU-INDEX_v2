@@ -12,10 +12,8 @@ import EventDialog from '../components/EventDialog';
 import EventDetailDialog from '../components/EventDetailDialog';
 
 const CalendarPage = () => {
-  const { isAdmin, isMitglied, isVorstand, user } = useAuth();
-  const isSpiess = user?.role === 'spiess';
-  const canManageEvents = isAdmin || isSpiess || isVorstand;
-  const canSeeResponses = isAdmin || isSpiess || isVorstand;
+  const { isAdmin, isMitglied, isVorstand, canManageEvents, canSeeFineInfo, user } = useAuth();
+  const canSeeResponses = canManageEvents;
 
   const [events, setEvents] = useState([]);
   const [view, setView] = useState('list');
@@ -153,7 +151,7 @@ const CalendarPage = () => {
                 <h3 className="font-semibold text-stone-900 truncate">{event.title}</h3>
                 {isToday && <Badge className="bg-emerald-600 text-white border-0 text-xs">Heute</Badge>}
                 {event.source === 'ics' && <Badge className="bg-blue-100 text-blue-700 border-0 text-xs"><Globe className="w-3 h-3 mr-0.5" />ICS</Badge>}
-                {event.fine_enabled && <Badge className="bg-amber-100 text-amber-700 border-0 text-xs"><Shield className="w-3 h-3 mr-0.5" />Strafe</Badge>}
+                {canSeeFineInfo && event.fine_enabled && <Badge className="bg-amber-100 text-amber-700 border-0 text-xs"><Shield className="w-3 h-3 mr-0.5" />Strafe</Badge>}
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
                 <span className="flex items-center gap-1">
@@ -171,7 +169,7 @@ const CalendarPage = () => {
                   </span>
                 )}
               </div>
-              {event.fine_amount > 0 && (
+              {canSeeFineInfo && event.fine_amount > 0 && (
                 <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   Strafe bei Nichtabsage: {formatCurrency(event.fine_amount)}
@@ -247,7 +245,7 @@ const CalendarPage = () => {
     <div data-testid="calendar-page" className="max-w-4xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-900">Termine</h1>
+        <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">Termine</h1>
         <div className="flex items-center gap-2">
           <Tabs value={view} onValueChange={setView}>
             <TabsList className="h-9">
@@ -362,6 +360,7 @@ const CalendarPage = () => {
           onDelete={canManageEvents ? (id) => { setDetailEvent(null); handleDelete(id); } : null}
           onToggleFine={canSeeResponses ? handleToggleFine : null}
           canSeeResponses={canSeeResponses}
+          canSeeFineInfo={canSeeFineInfo}
           userMemberId={user?.member_id}
         />
       )}

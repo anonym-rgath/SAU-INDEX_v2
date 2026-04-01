@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, User, Key, UserCog, Shield, CalendarDays, Settings, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, BarChart4, User, Key, Shield, CalendarDays, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import ChangePasswordDialog from './ChangePasswordDialog';
 
 const TopBar = () => {
-  const { logout, isVorstand, isAdmin, isMitglied, user } = useAuth();
+  const { logout, isAdmin, isMitglied, canSeeAdvancedStats, canManageMembers, canManageFineTypes, canSeeAllFines, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
-    const verwaltPaths = ['/members', '/fine-types', '/audit', '/roles', '/settings'];
+    const verwaltPaths = ['/members', '/fine-types', '/audit', '/settings'];
     return verwaltPaths.includes(window.location.pathname);
   });
 
@@ -22,29 +22,22 @@ const TopBar = () => {
     navigate('/login');
   };
 
-  const filterItem = (item) => {
-    if (item.adminOnly && !isAdmin) return false;
-    if (item.hideForVorstand && isVorstand) return false;
-    if (item.hideForMitglied && isMitglied) return false;
-    return true;
-  };
-
-  // Top-level items
+  // Top-level items (sichtbar für alle)
   const topNavItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showForAll: true },
-    { path: '/calendar', icon: CalendarDays, label: 'Termine', showForAll: true },
-    { path: '/statistics', icon: BarChart3, label: 'Statistiken', hideForMitglied: true },
-    { path: '/fines', icon: Receipt, label: 'Strafenübersicht', hideForMitglied: true, hideForVorstand: true },
-  ].filter(filterItem);
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/calendar', icon: CalendarDays, label: 'Termine' },
+    { path: '/fines', icon: Receipt, label: 'Strafenübersicht' },
+    { path: '/statistics', icon: BarChart3, label: 'Statistiken' },
+    canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken (Erweitert)' },
+  ].filter(Boolean);
 
-  // Verwaltung sub-items
+  // Administration sub-items
   const verwaltungItems = [
-    { path: '/members', icon: Users, label: 'Benutzerverwaltung', hideForMitglied: true },
-    { path: '/fine-types', icon: Tag, label: 'Strafenarten', hideForMitglied: true },
-    { path: '/audit', icon: Shield, label: 'Audit-Log', adminOnly: true },
-    { path: '/roles', icon: UserCog, label: 'Benutzerrollen', adminOnly: true },
-    { path: '/settings', icon: SlidersHorizontal, label: 'Einstellungen', adminOnly: true },
-  ].filter(filterItem);
+    canManageMembers && { path: '/members', icon: Users, label: 'Benutzerverwaltung' },
+    canManageFineTypes && { path: '/fine-types', icon: Tag, label: 'Strafenarten' },
+    isAdmin && { path: '/audit', icon: Shield, label: 'Audit-Log' },
+    { path: '/settings', icon: SlidersHorizontal, label: 'Einstellungen' },
+  ].filter(Boolean);
 
   const verwaltungPaths = verwaltungItems.map(i => i.path);
   const isVerwaltungActive = verwaltungPaths.includes(location.pathname);
@@ -160,7 +153,7 @@ const TopBar = () => {
                         : "text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 active:bg-stone-100"
                     )}
                   >
-                    <Settings className={cn("w-5 h-5", isVerwaltungActive && "stroke-[2.5]")} />
+                    <SlidersHorizontal className={cn("w-5 h-5", isVerwaltungActive && "stroke-[2.5]")} />
                     <span className="text-base flex-1">Administration</span>
                     <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", verwaltungOpen && "rotate-180")} />
                   </button>

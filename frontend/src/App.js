@@ -7,17 +7,15 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 
-// Lazy-loaded pages for code splitting
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Members = lazy(() => import('./pages/Members'));
 const FineTypes = lazy(() => import('./pages/FineTypes'));
 const Fines = lazy(() => import('./pages/Fines'));
 const Statistics = lazy(() => import('./pages/Statistics'));
-const UserManagement = lazy(() => import('./pages/UserManagement'));
+const StatisticsAdvanced = lazy(() => import('./pages/StatisticsAdvanced'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
 const Settings = lazy(() => import('./pages/Settings'));
-const Roles = lazy(() => import('./pages/Roles'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -25,37 +23,23 @@ const PageLoader = () => (
   </div>
 );
 
-// Redirect based on role
-const RoleBasedRedirect = () => {
-  const { isMitglied, isVorstand } = useAuth();
-  // Mitglied oder Vorstand -> Dashboard (eigene Übersicht)
-  if (isMitglied || isVorstand) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  return <Navigate to="/dashboard" replace />;
-};
+const RoleBasedRedirect = () => <Navigate to="/dashboard" replace />;
 
-// Vorstand und Mitglied sehen persönliches Dashboard
-const DashboardRoute = ({ children }) => {
-  return children;
-};
-
-// Routes that mitglied cannot access
-const NoMitgliedRoute = ({ children }) => {
+// Nur Admin + Spieß + Vorstand
+const ManagementRoute = ({ children }) => {
   const { isMitglied } = useAuth();
-  if (isMitglied) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  return children;
+  return isMitglied ? <Navigate to="/dashboard" replace /> : children;
 };
 
-// Only admin can access
+// Nur Admin + Spieß + Vorstand (Erweiterte Statistiken)
+const AdvancedStatsRoute = ({ children }) => {
+  const { canSeeAdvancedStats } = useAuth();
+  return canSeeAdvancedStats ? children : <Navigate to="/statistics" replace />;
+};
+
 const AdminRoute = ({ children }) => {
   const { isAdmin } = useAuth();
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  return children;
+  return isAdmin ? children : <Navigate to="/dashboard" replace />;
 };
 
 function App() {
@@ -66,28 +50,20 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<Login />} />
-            
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
+            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<RoleBasedRedirect />} />
-              <Route path="dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
-              <Route path="members" element={<NoMitgliedRoute><Members /></NoMitgliedRoute>} />
-              <Route path="fine-types" element={<NoMitgliedRoute><FineTypes /></NoMitgliedRoute>} />
-              <Route path="fines" element={<DashboardRoute><Fines /></DashboardRoute>} />
+              <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<CalendarPage />} />
-              <Route path="statistics" element={<NoMitgliedRoute><Statistics /></NoMitgliedRoute>} />
+              <Route path="fines" element={<Fines />} />
+              <Route path="statistics" element={<Statistics />} />
+              <Route path="statistics-advanced" element={<AdvancedStatsRoute><StatisticsAdvanced /></AdvancedStatsRoute>} />
+              <Route path="members" element={<ManagementRoute><Members /></ManagementRoute>} />
+              <Route path="fine-types" element={<ManagementRoute><FineTypes /></ManagementRoute>} />
               <Route path="users" element={<Navigate to="/members" replace />} />
               <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
-              <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
-              <Route path="roles" element={<AdminRoute><Roles /></AdminRoute>} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="roles" element={<Navigate to="/settings" replace />} />
             </Route>
-            
             <Route path="*" element={<RoleBasedRedirect />} />
           </Routes>
         </Suspense>
