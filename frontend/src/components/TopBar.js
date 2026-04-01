@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, User, Key, UserCog, Shield, CalendarDays, Settings, ChevronDown } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, User, Key, UserCog, Shield, CalendarDays, Settings, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -13,7 +13,7 @@ const TopBar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
-    const verwaltPaths = ['/members', '/users', '/fine-types', '/audit'];
+    const verwaltPaths = ['/members', '/users', '/fine-types', '/audit', '/settings'];
     return verwaltPaths.includes(window.location.pathname);
   });
 
@@ -43,6 +43,7 @@ const TopBar = () => {
     { path: '/users', icon: UserCog, label: 'Benutzerverwaltung', adminOnly: true },
     { path: '/fine-types', icon: Tag, label: 'Strafenarten', hideForMitglied: true },
     { path: '/audit', icon: Shield, label: 'Audit-Log', adminOnly: true },
+    { path: '/settings', icon: SlidersHorizontal, label: 'Einstellungen', adminOnly: true },
   ].filter(filterItem);
 
   const verwaltungPaths = verwaltungItems.map(i => i.path);
@@ -55,14 +56,14 @@ const TopBar = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100 h-14 flex items-center justify-between px-4">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border-b border-stone-100 dark:border-stone-800 h-14 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <Button
             data-testid="menu-button"
             onClick={() => setDrawerOpen(!drawerOpen)}
             variant="ghost"
             size="sm"
-            className="h-9 w-9 p-0 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg"
+            className="h-9 w-9 p-0 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg"
           >
             <Menu className="w-5 h-5" />
           </Button>
@@ -74,7 +75,7 @@ const TopBar = () => {
               className="w-8 h-8 object-contain"
             />
             <div>
-              <h2 className="font-bold text-base text-stone-900 leading-none">Rheinzelmänner</h2>
+              <h2 className="font-bold text-base text-stone-900 dark:text-stone-100 leading-none">Rheinzelmänner</h2>
             </div>
           </div>
         </div>
@@ -93,13 +94,13 @@ const TopBar = () => {
       <div
         data-testid="navigation-drawer"
         className={cn(
-          "fixed top-0 left-0 h-full w-64 sm:w-72 bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-out",
+          "fixed top-0 left-0 h-full w-64 sm:w-72 bg-white dark:bg-stone-900 z-50 shadow-2xl transform transition-transform duration-300 ease-out",
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Drawer Header */}
-          <div className="flex items-center justify-between p-4 border-b border-stone-200">
+          <div className="flex items-center justify-between p-4 border-b border-stone-200 dark:border-stone-700">
             <div className="flex items-center gap-2">
               <img 
                 src="/logo.png" 
@@ -107,7 +108,7 @@ const TopBar = () => {
                 className="w-10 h-10 object-contain"
               />
               <div>
-                <h2 className="font-bold text-lg text-stone-900">Rheinzelmänner</h2>
+                <h2 className="font-bold text-lg text-stone-900 dark:text-stone-100">Rheinzelmänner</h2>
               </div>
             </div>
             <Button
@@ -115,7 +116,7 @@ const TopBar = () => {
               onClick={() => setDrawerOpen(false)}
               variant="ghost"
               size="sm"
-              className="h-9 w-9 p-0 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg"
+              className="h-9 w-9 p-0 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg"
             >
               <X className="w-5 h-5" />
             </Button>
@@ -135,8 +136,8 @@ const TopBar = () => {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left min-h-[48px]",
                         isActive
-                          ? "bg-emerald-50 text-emerald-700 font-semibold"
-                          : "text-stone-600 hover:bg-stone-50 active:bg-stone-100"
+                          ? "bg-emerald-50 text-emerald-700 font-semibold dark:bg-emerald-900/30 dark:text-emerald-400"
+                          : "text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 active:bg-stone-100"
                       )}
                     >
                       <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5]")} />
@@ -155,8 +156,8 @@ const TopBar = () => {
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left min-h-[48px]",
                       isVerwaltungActive
-                        ? "bg-emerald-50 text-emerald-700 font-semibold"
-                        : "text-stone-600 hover:bg-stone-50 active:bg-stone-100"
+                        ? "bg-emerald-50 text-emerald-700 font-semibold dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : "text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 active:bg-stone-100"
                     )}
                   >
                     <Settings className={cn("w-5 h-5", isVerwaltungActive && "stroke-[2.5]")} />
@@ -179,8 +180,8 @@ const TopBar = () => {
                             className={cn(
                               "w-full flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-xl transition-all text-left min-h-[40px]",
                               isActive
-                                ? "bg-emerald-50 text-emerald-700 font-semibold"
-                                : "text-stone-500 hover:bg-stone-50 active:bg-stone-100"
+                                ? "bg-emerald-50 text-emerald-700 font-semibold dark:bg-emerald-900/30 dark:text-emerald-400"
+                                : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 active:bg-stone-100"
                             )}
                           >
                             <Icon className={cn("w-4 h-4", isActive && "stroke-[2.5]")} />
@@ -196,17 +197,17 @@ const TopBar = () => {
           </nav>
 
           {/* Drawer Footer - Benutzerbereich */}
-          <div className="p-4 border-t border-stone-200 space-y-3">
+          <div className="p-4 border-t border-stone-200 dark:border-stone-700 space-y-3">
             {/* Benutzer-Info */}
             <div className="flex items-center gap-3 px-2">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                <User className="w-5 h-5 text-emerald-700" />
+              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                <User className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-stone-900 truncate capitalize" data-testid="drawer-username">
+                <p className="font-semibold text-stone-900 dark:text-stone-100 truncate capitalize" data-testid="drawer-username">
                   {user?.username}
                 </p>
-                <p className="text-xs text-stone-500 capitalize">
+                <p className="text-xs text-stone-500 dark:text-stone-400 capitalize">
                   {user?.role}
                 </p>
               </div>
@@ -219,7 +220,7 @@ const TopBar = () => {
                 setPasswordDialogOpen(true);
                 setDrawerOpen(false);
               }}
-              className="w-full h-11 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors flex items-center justify-center gap-2 text-base font-medium"
+              className="w-full h-11 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors flex items-center justify-center gap-2 text-base font-medium"
             >
               <Key className="w-4 h-4" />
               Passwort ändern
@@ -229,7 +230,7 @@ const TopBar = () => {
             <Button
               data-testid="drawer-logout-button"
               onClick={handleLogout}
-              className="w-full h-11 rounded-full bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors flex items-center justify-center gap-2 text-base font-medium"
+              className="w-full h-11 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors flex items-center justify-center gap-2 text-base font-medium"
             >
               <LogOut className="w-5 h-5" />
               Abmelden

@@ -43,6 +43,28 @@ code {
         --ring: 160 84% 39%;
         --radius: 1rem;
     }
+
+    .dark {
+        --background: 20 14% 8%;
+        --foreground: 37 12% 90%;
+        --card: 20 14% 11%;
+        --card-foreground: 37 12% 90%;
+        --popover: 20 14% 11%;
+        --popover-foreground: 37 12% 90%;
+        --primary: 160 84% 39%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 20 14% 16%;
+        --secondary-foreground: 37 12% 90%;
+        --muted: 20 14% 16%;
+        --muted-foreground: 25 5% 55%;
+        --accent: 24 95% 53%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 20 14% 20%;
+        --input: 20 14% 20%;
+        --ring: 160 84% 39%;
+    }
 }
 
 @layer base {
@@ -50,7 +72,7 @@ code {
         @apply border-border;
     }
     body {
-        @apply bg-stone-50 text-stone-900;
+        @apply bg-background text-foreground;
     }
     h1, h2, h3, h4, h5, h6 {
         @apply font-outfit;

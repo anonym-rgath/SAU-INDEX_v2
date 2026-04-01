@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -15,6 +16,7 @@ const Statistics = lazy(() => import('./pages/Statistics'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -57,6 +59,7 @@ const AdminRoute = ({ children }) => {
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
@@ -80,6 +83,7 @@ function App() {
               <Route path="statistics" element={<NoMitgliedRoute><Statistics /></NoMitgliedRoute>} />
               <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
               <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
+              <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
             </Route>
             
             <Route path="*" element={<RoleBasedRedirect />} />
@@ -88,6 +92,7 @@ function App() {
       </BrowserRouter>
       <Toaster position="top-right" richColors />
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 
