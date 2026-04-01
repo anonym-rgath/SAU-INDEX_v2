@@ -267,14 +267,14 @@ class EventCreate(BaseModel):
     description: Optional[str] = None
     date: str  # ISO datetime string
     location: Optional[str] = None
-    fine_amount: Optional[float] = None
+    fine_type_id: Optional[str] = None
 
 class EventUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     date: Optional[str] = None
     location: Optional[str] = None
-    fine_amount: Optional[float] = None
+    fine_type_id: Optional[str] = None
 
 class EventResponse(BaseModel):
     response: str  # "zugesagt" | "abgesagt"
@@ -305,7 +305,7 @@ class EventOut(BaseModel):
     fine_enabled: Optional[bool] = False
 
 class EventFineAssign(BaseModel):
-    fine_type_id: str
+    fine_type_id: Optional[str] = None
 
 class ICSSettingsUpdate(BaseModel):
     ics_url: Optional[str] = None
@@ -1324,18 +1324,17 @@ async def create_event(input: EventCreate, request: Request, auth=Depends(requir
     
     event_id = str(uuid.uuid4())
     fine_type_id = None
+    fine_amount = 0
+    fine_enabled = False
     
-    # Strafart für diesen Termin erstellen wenn Betrag angegeben
-    if input.fine_amount and input.fine_amount > 0:
-        fine_type_id = str(uuid.uuid4())
-        fine_type_doc = {
-            "id": fine_type_id,
-            "label": f"Termin: {input.title}",
-            "amount": input.fine_amount,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "event_id": event_id
-        }
-        await db.fine_types.insert_one(fine_type_doc)
+    # Strafenart nachschlagen wenn angegeben
+    if input.fine_type_id:
+        fine_type = await db.fine_types.find_one({"id": input.fine_type_id}, {"_id": 0})
+        if not fine_type:
+            raise HTTPException(status_code=404, detail="Strafenart nicht gefunden")
+        fine_type_id = input.fine_type_id
+        fine_amount = fine_type.get('amount', 0)
+        fine_enabled = True
     
     event_doc = {
         "id": event_id,
@@ -1343,9 +1342,9 @@ async def create_event(input: EventCreate, request: Request, auth=Depends(requir
         "description": input.description or "",
         "date": event_date.isoformat(),
         "location": input.location or "",
-        "fine_amount": input.fine_amount or 0,
+        "fine_amount": fine_amount,
         "fine_type_id": fine_type_id,
-        "fine_enabled": bool(input.fine_amount and input.fine_amount > 0),
+        "fine_enabled": fine_enabled,
         "created_by": auth.get('username', ''),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "fines_processed": False,
@@ -1476,18 +1475,13 @@ async def update_event(event_id: str, input: EventUpdate, request: Request, auth
     if 'date' in update_data:
         update_data['date'] = datetime.fromisoformat(update_data['date'].replace('Z', '+00:00')).isoformat()
     
-    # Fine amount update -> update fine type too
-    if 'fine_amount' in update_data and existing.get('fine_type_id'):
-        await db.fine_types.update_one(
-            {"id": existing['fine_type_id']},
-            {"$set": {"amount": update_data['fine_amount']}}
-        )
-    
-    if 'title' in update_data and existing.get('fine_type_id'):
-        await db.fine_types.update_one(
-            {"id": existing['fine_type_id']},
-            {"$set": {"label": f"Termin: {update_data['title']}"}}
-        )
+    # Strafenart aktualisieren wenn fine_type_id geändert wird
+    if 'fine_type_id' in update_data:
+        fine_type = await db.fine_types.find_one({"id": update_data['fine_type_id']}, {"_id": 0})
+        if not fine_type:
+            raise HTTPException(status_code=404, detail="Strafenart nicht gefunden")
+        update_data['fine_amount'] = fine_type.get('amount', 0)
+        update_data['fine_enabled'] = True
     
     if update_data:
         await db.events.update_one({"id": event_id}, {"$set": update_data})

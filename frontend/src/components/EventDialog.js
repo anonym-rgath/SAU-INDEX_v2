@@ -12,6 +12,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from './ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import { formatCurrency } from '../lib/utils';
 import { toast } from 'sonner';
 
 const EventDialog = ({ open, onOpenChange, event, onSuccess }) => {
@@ -21,11 +29,13 @@ const EventDialog = ({ open, onOpenChange, event, onSuccess }) => {
     date: '',
     time: '',
     location: '',
-    fine_amount: '',
+    fine_type_id: '',
   });
+  const [fineTypes, setFineTypes] = useState([]);
 
   useEffect(() => {
     if (open) {
+      loadFineTypes();
       if (event) {
         const d = new Date(event.date);
         setFormData({
@@ -34,13 +44,22 @@ const EventDialog = ({ open, onOpenChange, event, onSuccess }) => {
           date: d.toISOString().split('T')[0],
           time: d.toTimeString().slice(0, 5),
           location: event.location || '',
-          fine_amount: event.fine_amount > 0 ? String(event.fine_amount) : '',
+          fine_type_id: event.fine_type_id || '',
         });
       } else {
-        setFormData({ title: '', description: '', date: '', time: '', location: '', fine_amount: '' });
+        setFormData({ title: '', description: '', date: '', time: '', location: '', fine_type_id: '' });
       }
     }
   }, [open, event]);
+
+  const loadFineTypes = async () => {
+    try {
+      const res = await api.fineTypes.getAll();
+      setFineTypes(res.data.filter(ft => !ft.event_id));
+    } catch (err) {
+      // ignore
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,7 +74,7 @@ const EventDialog = ({ open, onOpenChange, event, onSuccess }) => {
       description: formData.description || null,
       date: dateStr,
       location: formData.location || null,
-      fine_amount: formData.fine_amount ? parseFloat(formData.fine_amount) : null,
+      fine_type_id: formData.fine_type_id || null,
     };
 
     try {
@@ -143,17 +162,23 @@ const EventDialog = ({ open, onOpenChange, event, onSuccess }) => {
             </div>
 
             <div className="space-y-2">
-              <Label>Strafe bei Nichtabsage (optional)</Label>
-              <Input
-                data-testid="event-fine-input"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.fine_amount}
-                onChange={(e) => setFormData({ ...formData, fine_amount: e.target.value })}
-                placeholder="0.00"
-                className="h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base"
-              />
+              <Label>Strafenart bei Nichtabsage (optional)</Label>
+              <Select
+                value={formData.fine_type_id}
+                onValueChange={(val) => setFormData({ ...formData, fine_type_id: val === '_none' ? '' : val })}
+              >
+                <SelectTrigger data-testid="event-fine-type-select" className="h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base">
+                  <SelectValue placeholder="Keine Strafe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Keine Strafe</SelectItem>
+                  {fineTypes.map(ft => (
+                    <SelectItem key={ft.id} value={ft.id}>
+                      {ft.label} ({formatCurrency(ft.amount)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-stone-400">Wird automatisch bei fehlender/verspäteter Rückmeldung zugewiesen</p>
             </div>
           </div>
