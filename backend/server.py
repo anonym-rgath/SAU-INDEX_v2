@@ -13,10 +13,13 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from enum import Enum
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 import jwt
 from passlib.context import CryptContext
 import secrets
+import httpx
+import icalendar
+import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -297,6 +300,13 @@ class EventOut(BaseModel):
     my_response: Optional[str] = None
     responses: Optional[List[EventResponseOut]] = None
     response_stats: Optional[dict] = None
+    source: Optional[str] = None
+    ics_uid: Optional[str] = None
+    fine_enabled: Optional[bool] = False
+
+class ICSSettingsUpdate(BaseModel):
+    ics_url: Optional[str] = None
+    sync_enabled: Optional[bool] = None
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -1219,7 +1229,7 @@ async def _check_and_assign_fines():
     
     # Events deren Deadline (24h vorher) abgelaufen ist und die noch nicht verarbeitet wurden
     events = await db.events.find(
-        {"fines_processed": {"$ne": True}, "fine_amount": {"$gt": 0}},
+        {"fines_processed": {"$ne": True}, "fine_amount": {"$gt": 0}, "fine_enabled": True},
         {"_id": 0}
     ).to_list(1000)
     
@@ -1332,9 +1342,11 @@ async def create_event(input: EventCreate, request: Request, auth=Depends(requir
         "location": input.location or "",
         "fine_amount": input.fine_amount or 0,
         "fine_type_id": fine_type_id,
+        "fine_enabled": bool(input.fine_amount and input.fine_amount > 0),
         "created_by": auth.get('username', ''),
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "fines_processed": False
+        "fines_processed": False,
+        "source": "manual"
     }
     await db.events.insert_one(event_doc)
     
@@ -1388,6 +1400,9 @@ async def get_events(auth=Depends(require_authenticated)):
             created_at=event.get('created_at', ''),
             response_open=is_response_open,
             response_deadline_passed=deadline_passed,
+            source=event.get('source'),
+            ics_uid=event.get('ics_uid'),
+            fine_enabled=event.get('fine_enabled', False),
         )
         
         # Eigene Antwort laden (für alle Rollen mit member_id)
@@ -1563,6 +1578,204 @@ async def trigger_fine_check(auth=Depends(require_admin_or_spiess)):
     await _check_and_assign_fines()
     return {"message": "Strafenprüfung abgeschlossen"}
 
+# ============ ICS KALENDER-SYNCHRONISATION ============
+
+async def _sync_ics_calendar():
+    """ICS-Kalender synchronisieren"""
+    settings = await db.settings.find_one({"key": "ics_config"}, {"_id": 0})
+    if not settings or not settings.get('ics_url') or not settings.get('sync_enabled', False):
+        return {"synced": 0, "created": 0, "updated": 0, "deleted": 0, "message": "ICS-Sync nicht konfiguriert"}
+    
+    ics_url = settings['ics_url']
+    
+    try:
+        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client_http:
+            resp = await client_http.get(ics_url)
+            resp.raise_for_status()
+    except Exception as e:
+        logger.error(f"ICS-Fetch fehlgeschlagen: {e}")
+        return {"error": f"ICS-URL nicht erreichbar: {str(e)}"}
+    
+    try:
+        cal = icalendar.Calendar.from_ical(resp.text)
+    except Exception as e:
+        logger.error(f"ICS-Parse fehlgeschlagen: {e}")
+        return {"error": f"ICS-Datei ungültig: {str(e)}"}
+    
+    # Alle ICS-UIDs aus dem Feed sammeln
+    ics_events = {}
+    for component in cal.walk():
+        if component.name != 'VEVENT':
+            continue
+        
+        uid = str(component.get('UID', ''))
+        if not uid:
+            continue
+        
+        summary = str(component.get('SUMMARY', 'Ohne Titel'))
+        description = str(component.get('DESCRIPTION', '')) if component.get('DESCRIPTION') else ''
+        location = str(component.get('LOCATION', '')) if component.get('LOCATION') else ''
+        
+        dtstart = component.get('DTSTART')
+        if not dtstart:
+            continue
+        
+        dt = dtstart.dt
+        if isinstance(dt, date) and not isinstance(dt, datetime):
+            dt = datetime.combine(dt, datetime.min.time(), tzinfo=timezone.utc)
+        elif dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        
+        ics_events[uid] = {
+            "title": summary,
+            "description": description,
+            "location": location,
+            "date": dt.isoformat(),
+        }
+    
+    # Bestehende ICS-Events aus DB laden
+    existing = await db.events.find({"source": "ics"}, {"_id": 0}).to_list(5000)
+    existing_map = {e['ics_uid']: e for e in existing if e.get('ics_uid')}
+    
+    created = 0
+    updated = 0
+    deleted = 0
+    
+    # Neue/aktualisierte Events
+    for uid, data in ics_events.items():
+        if uid in existing_map:
+            ex = existing_map[uid]
+            changes = {}
+            if ex.get('title') != data['title']:
+                changes['title'] = data['title']
+            if ex.get('description', '') != data['description']:
+                changes['description'] = data['description']
+            if ex.get('location', '') != data['location']:
+                changes['location'] = data['location']
+            if ex.get('date') != data['date']:
+                changes['date'] = data['date']
+            
+            if changes:
+                await db.events.update_one({"ics_uid": uid}, {"$set": changes})
+                updated += 1
+        else:
+            event_doc = {
+                "id": str(uuid.uuid4()),
+                "title": data['title'],
+                "description": data['description'],
+                "date": data['date'],
+                "location": data['location'],
+                "fine_amount": 0,
+                "fine_type_id": None,
+                "fine_enabled": False,
+                "created_by": "ICS-Sync",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "fines_processed": False,
+                "source": "ics",
+                "ics_uid": uid
+            }
+            await db.events.insert_one(event_doc)
+            created += 1
+    
+    # Gelöschte Events (in ICS nicht mehr vorhanden)
+    for uid, ex in existing_map.items():
+        if uid not in ics_events:
+            if ex.get('fine_type_id'):
+                await db.fine_types.delete_one({"id": ex['fine_type_id']})
+            await db.event_responses.delete_many({"event_id": ex['id']})
+            await db.events.delete_one({"id": ex['id']})
+            deleted += 1
+    
+    # Letzten Sync-Zeitpunkt speichern
+    await db.settings.update_one(
+        {"key": "ics_config"},
+        {"$set": {"last_sync": datetime.now(timezone.utc).isoformat()}},
+    )
+    
+    logger.info(f"ICS-Sync abgeschlossen: {created} neu, {updated} aktualisiert, {deleted} gelöscht")
+    return {"synced": len(ics_events), "created": created, "updated": updated, "deleted": deleted}
+
+@api_router.get("/settings/ics")
+async def get_ics_settings(auth=Depends(require_admin)):
+    """ICS-Einstellungen abrufen (nur Admin)"""
+    settings = await db.settings.find_one({"key": "ics_config"}, {"_id": 0})
+    if not settings:
+        return {"ics_url": "", "sync_enabled": False, "last_sync": None}
+    return {
+        "ics_url": settings.get("ics_url", ""),
+        "sync_enabled": settings.get("sync_enabled", False),
+        "last_sync": settings.get("last_sync"),
+    }
+
+@api_router.put("/settings/ics")
+async def update_ics_settings(input: ICSSettingsUpdate, request: Request, auth=Depends(require_admin)):
+    """ICS-Einstellungen aktualisieren (nur Admin)"""
+    update_data = {k: v for k, v in input.model_dump().items() if v is not None}
+    
+    await db.settings.update_one(
+        {"key": "ics_config"},
+        {"$set": {**update_data, "key": "ics_config"}},
+        upsert=True
+    )
+    
+    await log_audit(
+        AuditAction.UPDATE, "settings", "ics_config",
+        auth.get('user_id'), auth.get('username'),
+        "ICS-Einstellungen aktualisiert",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": "ICS-Einstellungen gespeichert"}
+
+@api_router.post("/settings/ics/sync")
+async def manual_ics_sync(request: Request, auth=Depends(require_admin)):
+    """Manuelle ICS-Synchronisation (nur Admin)"""
+    result = await _sync_ics_calendar()
+    
+    await log_audit(
+        AuditAction.UPDATE, "settings", "ics_sync",
+        auth.get('user_id'), auth.get('username'),
+        f"ICS-Sync: {result}",
+        request.client.host if request.client else None
+    )
+    
+    return result
+
+@api_router.put("/events/{event_id}/fine-toggle")
+async def toggle_event_fine(event_id: str, request: Request, auth=Depends(require_any_role)):
+    """Straflogik für einen (ICS-)Termin aktivieren/deaktivieren"""
+    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+    
+    currently_enabled = event.get('fine_enabled', False)
+    new_state = not currently_enabled
+    
+    update_data = {"fine_enabled": new_state}
+    
+    if new_state and not event.get('fine_type_id') and event.get('fine_amount', 0) > 0:
+        fine_type_id = str(uuid.uuid4())
+        fine_type_doc = {
+            "id": fine_type_id,
+            "label": f"Termin: {event['title']}",
+            "amount": event['fine_amount'],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "event_id": event_id
+        }
+        await db.fine_types.insert_one(fine_type_doc)
+        update_data["fine_type_id"] = fine_type_id
+    
+    await db.events.update_one({"id": event_id}, {"$set": update_data})
+    
+    await log_audit(
+        AuditAction.UPDATE, "event", event_id,
+        auth.get('user_id'), auth.get('username'),
+        f"Straflogik {'aktiviert' if new_state else 'deaktiviert'} für: {event['title']}",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": f"Straflogik {'aktiviert' if new_state else 'deaktiviert'}", "fine_enabled": new_state}
+
 # Health Check Endpoint (für Docker und Monitoring)
 @app.get("/health")
 async def health_check():
@@ -1630,12 +1843,31 @@ async def startup_db_client():
         await db.events.create_index("id", unique=True)
         await db.events.create_index([("date", 1)])
         await db.events.create_index("fines_processed")
+        await db.events.create_index("source")
+        await db.events.create_index("ics_uid")
         await db.event_responses.create_index([("event_id", 1), ("member_id", 1)], unique=True)
         await db.event_responses.create_index("event_id")
         logger.info("Datenbank-Indizes erstellt")
         
+        # Tägliche ICS-Synchronisation im Hintergrund starten
+        asyncio.create_task(_daily_ics_sync())
+        
     except Exception as e:
         logger.error(f"Fehler bei der Initialisierung: {e}")
+
+async def _daily_ics_sync():
+    """Tägliche ICS-Kalender-Synchronisation"""
+    while True:
+        try:
+            await asyncio.sleep(5)  # Kurz warten nach Startup
+            result = await _sync_ics_calendar()
+            if 'error' not in result:
+                logger.info(f"Tägliche ICS-Sync: {result}")
+            else:
+                logger.warning(f"ICS-Sync Fehler: {result}")
+        except Exception as e:
+            logger.error(f"ICS-Sync Task Fehler: {e}")
+        await asyncio.sleep(86400)  # 24 Stunden warten
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

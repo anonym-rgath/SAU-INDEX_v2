@@ -54,5 +54,11 @@ export const api = {
     delete: (id) => axios.delete(`${API_URL}/events/${id}`),
     respond: (id, data) => axios.post(`${API_URL}/events/${id}/respond`, data),
     checkFines: () => axios.post(`${API_URL}/events/check-fines`),
+    toggleFine: (id) => axios.put(`${API_URL}/events/${id}/fine-toggle`),
+  },
+  ics: {
+    getSettings: () => axios.get(`${API_URL}/settings/ics`),
+    updateSettings: (data) => axios.put(`${API_URL}/settings/ics`, data),
+    sync: () => axios.post(`${API_URL}/settings/ics/sync`),
   },
 };

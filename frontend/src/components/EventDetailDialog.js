@@ -8,10 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
-import { CalendarDays, Clock, MapPin, AlertTriangle, Check, X, Pencil, Trash2, Users } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, AlertTriangle, Check, X, Pencil, Trash2, Users, Globe, Shield } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
-const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDelete, canSeeResponses, userMemberId }) => {
+const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDelete, onToggleFine, canSeeResponses, userMemberId }) => {
   if (!event) return null;
 
   const eventDate = new Date(event.date);
@@ -33,7 +33,10 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl">{event.title}</DialogTitle>
+          <DialogTitle className="text-xl flex items-center gap-2">
+            {event.title}
+            {event.source === 'ics' && <Badge className="bg-blue-100 text-blue-700 border-0 text-xs"><Globe className="w-3 h-3 mr-0.5" />ICS</Badge>}
+          </DialogTitle>
           <p className="text-sm text-stone-500 sr-only">Termindetails und Rückmeldung</p>
         </DialogHeader>
 
@@ -141,8 +144,18 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
         </ScrollArea>
 
         {/* Admin Actions */}
-        {(onEdit || onDelete) && (
+        {(onEdit || onDelete || onToggleFine) && (
           <div className="flex gap-2 pt-3 border-t border-stone-100">
+            {onToggleFine && (
+              <Button
+                data-testid="toggle-fine-button"
+                onClick={() => onToggleFine(event.id)}
+                variant="outline"
+                className={`flex-1 h-10 rounded-full text-sm ${event.fine_enabled ? 'text-amber-700 border-amber-200 bg-amber-50' : 'text-stone-500'}`}
+              >
+                <Shield className="w-4 h-4 mr-1" /> {event.fine_enabled ? 'Strafe aktiv' : 'Strafe aktivieren'}
+              </Button>
+            )}
             {onEdit && (
               <Button
                 data-testid="edit-event-button"
