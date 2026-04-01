@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, User, Key, UserCog, Shield, CalendarDays } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, User, Key, UserCog, Shield, CalendarDays, Settings, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -12,30 +12,41 @@ const TopBar = () => {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
+    const verwaltPaths = ['/members', '/users', '/fine-types', '/audit'];
+    return verwaltPaths.includes(window.location.pathname);
+  });
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Navigation basierend auf Rolle
-  const allNavItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showForAll: true },
-    { path: '/calendar', icon: CalendarDays, label: 'Termine', showForAll: true },
-    { path: '/members', icon: Users, label: 'Mitgliederverwaltung', hideForMitglied: true },
-    { path: '/statistics', icon: BarChart3, label: 'Statistiken', hideForMitglied: true },
-    { path: '/fines', icon: Receipt, label: 'Strafenübersicht', hideForMitglied: true, hideForVorstand: true },
-    { path: '/fine-types', icon: Tag, label: 'Strafenarten', hideForMitglied: true },
-    { path: '/users', icon: UserCog, label: 'Benutzerverwaltung', adminOnly: true },
-    { path: '/audit', icon: Shield, label: 'Audit-Log', adminOnly: true },
-  ];
-  
-  const navItems = allNavItems.filter(item => {
+  const filterItem = (item) => {
     if (item.adminOnly && !isAdmin) return false;
     if (item.hideForVorstand && isVorstand) return false;
     if (item.hideForMitglied && isMitglied) return false;
     return true;
-  });
+  };
+
+  // Top-level items
+  const topNavItems = [
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showForAll: true },
+    { path: '/calendar', icon: CalendarDays, label: 'Termine', showForAll: true },
+    { path: '/statistics', icon: BarChart3, label: 'Statistiken', hideForMitglied: true },
+    { path: '/fines', icon: Receipt, label: 'Strafenübersicht', hideForMitglied: true, hideForVorstand: true },
+  ].filter(filterItem);
+
+  // Verwaltung sub-items
+  const verwaltungItems = [
+    { path: '/members', icon: Users, label: 'Mitgliederverwaltung', hideForMitglied: true },
+    { path: '/users', icon: UserCog, label: 'Benutzerverwaltung', adminOnly: true },
+    { path: '/fine-types', icon: Tag, label: 'Strafenarten', hideForMitglied: true },
+    { path: '/audit', icon: Shield, label: 'Audit-Log', adminOnly: true },
+  ].filter(filterItem);
+
+  const verwaltungPaths = verwaltungItems.map(i => i.path);
+  const isVerwaltungActive = verwaltungPaths.includes(location.pathname);
 
   const handleNavClick = (path) => {
     navigate(path);
@@ -111,12 +122,11 @@ const TopBar = () => {
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-2">
-              {navItems.map((item) => {
+          <nav className="flex-1 p-4 overflow-y-auto">
+            <ul className="space-y-1">
+              {topNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
-                
                 return (
                   <li key={item.path}>
                     <button
@@ -135,6 +145,53 @@ const TopBar = () => {
                   </li>
                 );
               })}
+
+              {/* Verwaltung Group */}
+              {verwaltungItems.length > 0 && (
+                <li>
+                  <button
+                    data-testid="drawer-nav-verwaltung"
+                    onClick={() => setVerwaltungOpen(!verwaltungOpen)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left min-h-[48px]",
+                      isVerwaltungActive
+                        ? "bg-emerald-50 text-emerald-700 font-semibold"
+                        : "text-stone-600 hover:bg-stone-50 active:bg-stone-100"
+                    )}
+                  >
+                    <Settings className={cn("w-5 h-5", isVerwaltungActive && "stroke-[2.5]")} />
+                    <span className="text-base flex-1">Verwaltung</span>
+                    <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", verwaltungOpen && "rotate-180")} />
+                  </button>
+
+                  <ul className={cn(
+                    "overflow-hidden transition-all duration-200 ease-in-out",
+                    verwaltungOpen ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+                  )}>
+                    {verwaltungItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.path;
+                      return (
+                        <li key={item.path}>
+                          <button
+                            data-testid={`drawer-nav-${item.path.slice(1)}`}
+                            onClick={() => handleNavClick(item.path)}
+                            className={cn(
+                              "w-full flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-xl transition-all text-left min-h-[40px]",
+                              isActive
+                                ? "bg-emerald-50 text-emerald-700 font-semibold"
+                                : "text-stone-500 hover:bg-stone-50 active:bg-stone-100"
+                            )}
+                          >
+                            <Icon className={cn("w-4 h-4", isActive && "stroke-[2.5]")} />
+                            <span className="text-sm">{item.label}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              )}
             </ul>
           </nav>
 
