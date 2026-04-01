@@ -886,6 +886,16 @@ async def update_member(request: Request, member_id: str, input: MemberCreate, a
     old_status = result.get('status', 'aktiv')
     if input.status == 'archiviert' and old_status != 'archiviert':
         update_data['archived_at'] = datetime.now(timezone.utc).isoformat()
+        # App-Zugang automatisch deaktivieren
+        deleted_user = await db.users.find_one({"member_id": member_id}, {"_id": 0})
+        if deleted_user:
+            await db.users.delete_one({"member_id": member_id})
+            await log_audit(
+                AuditAction.DELETE, "user_access", deleted_user.get('id'),
+                auth.get('sub'), auth.get('username'),
+                f"App-Zugang automatisch deaktiviert (Archivierung): {deleted_user.get('username')}",
+                get_remote_address(request)
+            )
     # Wenn Status von archiviert auf aktiv/passiv wechselt, archived_at löschen
     elif input.status != 'archiviert' and old_status == 'archiviert':
         update_data['archived_at'] = None
