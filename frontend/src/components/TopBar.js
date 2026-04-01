@@ -160,7 +160,7 @@ const TopBar = () => {
                     )}
                   >
                     <Settings className={cn("w-5 h-5", isVerwaltungActive && "stroke-[2.5]")} />
-                    <span className="text-base flex-1">Verwaltung</span>
+                    <span className="text-base flex-1">Administration</span>
                     <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", verwaltungOpen && "rotate-180")} />
                   </button>
 
