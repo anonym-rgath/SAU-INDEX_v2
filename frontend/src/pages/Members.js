@@ -226,6 +226,7 @@ const Members = () => {
             </h2>
             <span className="text-sm text-stone-500">({activeMembers.length})</span>
           </div>
+          <p className="text-sm text-stone-500 -mt-2 mb-4 ml-8">Aktive und passive Vereinsmitglieder</p>
 
           <div className="space-y-2" data-testid="members-list">
             {activeMembers.length > 0 ? (

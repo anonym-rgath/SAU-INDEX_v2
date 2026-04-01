@@ -5,12 +5,11 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { CalendarDays, List, Plus, MapPin, Clock, ChevronLeft, ChevronRight, Users, AlertTriangle, Check, X, Info, RefreshCw, Settings, Globe, Shield } from 'lucide-react';
+import { CalendarDays, List, Plus, MapPin, Clock, ChevronLeft, ChevronRight, Users, AlertTriangle, Check, X, Info, Globe, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '../lib/utils';
 import EventDialog from '../components/EventDialog';
 import EventDetailDialog from '../components/EventDetailDialog';
-import ICSSettingsDialog from '../components/ICSSettingsDialog';
 
 const CalendarPage = () => {
   const { isAdmin, isMitglied, isVorstand, user } = useAuth();
@@ -25,8 +24,6 @@ const CalendarPage = () => {
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [detailEvent, setDetailEvent] = useState(null);
-  const [icsDialogOpen, setIcsDialogOpen] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadEvents();
@@ -62,24 +59,6 @@ const CalendarPage = () => {
       loadEvents();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Fehler bei der Rückmeldung');
-    }
-  };
-
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      const res = await api.ics.sync();
-      const d = res.data;
-      if (d.error) {
-        toast.error(d.error);
-      } else {
-        toast.success(`Sync: ${d.created} neu, ${d.updated} aktualisiert, ${d.deleted} gelöscht`);
-        loadEvents();
-      }
-    } catch (err) {
-      toast.error('Sync fehlgeschlagen');
-    } finally {
-      setSyncing(false);
     }
   };
 
@@ -285,27 +264,6 @@ const CalendarPage = () => {
               <Plus className="w-4 h-4 mr-1" /> Termin
             </Button>
           )}
-          {isAdmin && (
-            <>
-              <Button
-                data-testid="ics-sync-button"
-                onClick={handleSync}
-                disabled={syncing}
-                variant="outline"
-                className="h-9 px-3 rounded-full text-sm"
-              >
-                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              </Button>
-              <Button
-                data-testid="ics-settings-button"
-                onClick={() => setIcsDialogOpen(true)}
-                variant="outline"
-                className="h-9 px-3 rounded-full text-sm"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -408,13 +366,6 @@ const CalendarPage = () => {
         />
       )}
 
-      {/* ICS Settings Dialog */}
-      {isAdmin && (
-        <ICSSettingsDialog
-          open={icsDialogOpen}
-          onOpenChange={setIcsDialogOpen}
-        />
-      )}
     </div>
   );
 };
