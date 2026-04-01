@@ -252,7 +252,7 @@ const UserManagement = () => {
               Benutzerverwaltung
             </h1>
             <p className="text-sm text-stone-500 mt-1">
-              Benutzerkonten verwalten
+              Zugänge und Rollen für die App-Anmeldung verwalten
             </p>
           </div>
           

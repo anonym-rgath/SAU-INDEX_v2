@@ -181,7 +181,7 @@ const Members = () => {
               Mitgliederverwaltung
             </h1>
             <p className="text-sm text-stone-500 mt-1">
-              Vereinsmitglieder
+              Stammdaten aller Vereinsmitglieder pflegen
             </p>
           </div>
           <div className="flex items-center gap-2">
