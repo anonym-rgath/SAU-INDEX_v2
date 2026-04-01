@@ -22,7 +22,7 @@ const TopBar = () => {
   const allNavItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showForAll: true },
     { path: '/calendar', icon: CalendarDays, label: 'Termine', showForAll: true },
-    { path: '/members', icon: Users, label: 'Mitglieder', hideForMitglied: true },
+    { path: '/members', icon: Users, label: 'Mitgliederverwaltung', hideForMitglied: true },
     { path: '/statistics', icon: BarChart3, label: 'Statistiken', hideForMitglied: true },
     { path: '/fines', icon: Receipt, label: 'Strafenübersicht', hideForMitglied: true, hideForVorstand: true },
     { path: '/fine-types', icon: Tag, label: 'Strafenarten', hideForMitglied: true },

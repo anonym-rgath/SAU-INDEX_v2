@@ -178,7 +178,7 @@ const Members = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
-              Mitglieder
+              Mitgliederverwaltung
             </h1>
             <p className="text-sm text-stone-500 mt-1">
               Vereinsmitglieder
