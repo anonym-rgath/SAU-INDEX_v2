@@ -27,7 +27,7 @@ const TopBar = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/calendar', icon: CalendarDays, label: 'Termine' },
     { path: '/fines', icon: Receipt, label: 'Strafenübersicht' },
-    canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken' },
+    canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken (Erweitert)' },
   ].filter(Boolean);
 
   // Administration sub-items
