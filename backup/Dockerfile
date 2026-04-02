@@ -1,6 +1,10 @@
 FROM mongo:4.4.18
 
-RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
+# MongoDB GPG-Key abgelaufen — Repo deaktivieren, cron installieren
+RUN rm -f /etc/apt/sources.list.d/mongodb-org.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends cron && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY backup.sh /usr/local/bin/backup.sh
 RUN chmod +x /usr/local/bin/backup.sh
