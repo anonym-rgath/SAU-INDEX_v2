@@ -102,6 +102,7 @@ const Roles = () => {
                 <PermRow label="Einstellungen" admin="full" spiess="full" vorstand="full" mitglied="limited" />
 
                 <PermRow section label="Verwaltung" />
+                <PermRow label="Profil" admin="full" spiess="full" vorstand="full" mitglied="full" />
                 <PermRow label="Benutzerrollen" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <PermRow label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <PermRow label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />

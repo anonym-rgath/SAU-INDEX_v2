@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -20,6 +21,7 @@ import secrets
 import httpx
 import icalendar
 import asyncio
+import requests as sync_requests
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -310,6 +312,45 @@ class EventFineAssign(BaseModel):
 class ICSSettingsUpdate(BaseModel):
     ics_url: Optional[str] = None
     sync_enabled: Optional[bool] = None
+
+class ProfileUpdate(BaseModel):
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    birthday: Optional[str] = None
+
+# --- Object Storage ---
+STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
+EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
+APP_NAME = "rheinzelmaenner"
+_storage_key = None
+
+def _init_storage():
+    global _storage_key
+    if _storage_key:
+        return _storage_key
+    resp = sync_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
+    resp.raise_for_status()
+    _storage_key = resp.json()["storage_key"]
+    return _storage_key
+
+def _put_object(path: str, data: bytes, content_type: str) -> dict:
+    key = _init_storage()
+    resp = sync_requests.put(
+        f"{STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key, "Content-Type": content_type},
+        data=data, timeout=120
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+def _get_object(path: str):
+    key = _init_storage()
+    resp = sync_requests.get(
+        f"{STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key}, timeout=60
+    )
+    resp.raise_for_status()
+    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -1916,6 +1957,105 @@ async def toggle_event_fine(event_id: str, request: Request, input: Optional[Eve
     
     return {"message": msg, "fine_enabled": new_state}
 
+# ============================================================
+# PROFIL-ENDPOINTS
+# ============================================================
+
+@api_router.get("/profile")
+async def get_profile(auth=Depends(verify_token)):
+    user = await db.users.find_one({"id": auth["sub"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    profile = {
+        "username": user["username"],
+        "role": user["role"],
+        "firstName": None,
+        "lastName": None,
+        "birthday": None,
+        "avatar_path": None,
+    }
+    
+    if user.get("member_id"):
+        member = await db.members.find_one({"id": user["member_id"]}, {"_id": 0})
+        if member:
+            profile["firstName"] = member.get("firstName")
+            profile["lastName"] = member.get("lastName")
+            profile["birthday"] = member.get("birthday")
+            profile["avatar_path"] = member.get("avatar_path")
+            profile["member_id"] = member["id"]
+    
+    return profile
+
+@api_router.put("/profile")
+async def update_profile(data: ProfileUpdate, request: Request, auth=Depends(verify_token)):
+    user = await db.users.find_one({"id": auth["sub"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    if not user.get("member_id"):
+        raise HTTPException(status_code=400, detail="Kein Mitgliedsprofil verknüpft")
+    
+    update = {}
+    if data.firstName is not None:
+        update["firstName"] = data.firstName.strip()
+    if data.lastName is not None:
+        update["lastName"] = data.lastName.strip()
+    if data.birthday is not None:
+        update["birthday"] = data.birthday if data.birthday else None
+    
+    if update:
+        await db.members.update_one({"id": user["member_id"]}, {"$set": update})
+        await log_audit(
+            AuditAction.UPDATE, "profile", user["member_id"],
+            auth.get("sub"), auth.get("username"),
+            f"Profil aktualisiert: {', '.join(update.keys())}",
+            request.client.host if request.client else None
+        )
+    
+    return {"message": "Profil aktualisiert"}
+
+@api_router.post("/profile/avatar")
+async def upload_avatar(request: Request, file: UploadFile = File(...), auth=Depends(verify_token)):
+    user = await db.users.find_one({"id": auth["sub"]}, {"_id": 0})
+    if not user or not user.get("member_id"):
+        raise HTTPException(status_code=400, detail="Kein Mitgliedsprofil verknüpft")
+    
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Nur JPG, PNG oder WebP erlaubt")
+    
+    data = await file.read()
+    if len(data) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Maximale Dateigröße: 5 MB")
+    
+    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    path = f"{APP_NAME}/avatars/{user['member_id']}/{uuid.uuid4()}.{ext}"
+    
+    _put_object(path, data, file.content_type)
+    
+    await db.members.update_one(
+        {"id": user["member_id"]},
+        {"$set": {"avatar_path": path}}
+    )
+    
+    await log_audit(
+        AuditAction.UPDATE, "profile", user["member_id"],
+        auth.get("sub"), auth.get("username"),
+        "Profilbild hochgeladen",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": "Profilbild hochgeladen", "avatar_path": path}
+
+@api_router.get("/profile/avatar/{path:path}")
+async def get_avatar(path: str, auth: str = None):
+    try:
+        data, content_type = _get_object(path)
+        return Response(content=data, media_type=content_type)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Bild nicht gefunden")
+
 # Health Check Endpoint (für Docker und Monitoring)
 @app.get("/health")
 async def health_check():
@@ -1988,6 +2128,13 @@ async def startup_db_client():
         await db.event_responses.create_index([("event_id", 1), ("member_id", 1)], unique=True)
         await db.event_responses.create_index("event_id")
         logger.info("Datenbank-Indizes erstellt")
+        
+        # Object Storage initialisieren
+        try:
+            _init_storage()
+            logger.info("Object Storage initialisiert")
+        except Exception as e:
+            logger.warning(f"Object Storage Init fehlgeschlagen: {e}")
         
         # Tägliche ICS-Synchronisation im Hintergrund starten
         asyncio.create_task(_daily_ics_sync())
