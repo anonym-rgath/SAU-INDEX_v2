@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -8,6 +8,76 @@ import AddFineDialog from '../components/AddFineDialog';
 import QRScanDialog from '../components/QRScanDialog';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+
+const PersonalFinesByType = ({ fines }) => {
+  const finesByType = useMemo(() => {
+    const map = {};
+    fines.forEach(f => {
+      const label = f.fine_type_label || 'Sonstige';
+      if (!map[label]) map[label] = { label, count: 0, total: 0 };
+      map[label].count += 1;
+      map[label].total += f.amount;
+    });
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }, [fines]);
+
+  if (finesByType.length === 0) return null;
+
+  return (
+    <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
+      <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-3">Strafen nach Art</h2>
+      <div className="space-y-2">
+        {finesByType.map(ft => (
+          <div key={ft.label} className="flex items-center justify-between p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+            <div>
+              <p className="font-medium text-stone-900 dark:text-stone-100 text-sm">{ft.label}</p>
+              <p className="text-xs text-stone-400">{ft.count}x</p>
+            </div>
+            <span className="font-bold text-emerald-700">{formatCurrency(ft.total)}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};
+
+const PersonalMonthlyChart = ({ fines }) => {
+  const monthlyData = useMemo(() => {
+    const months = ['Aug', 'Sep', 'Okt', 'Nov', 'Dez', 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul'];
+    const data = months.map(m => ({ month: m, amount: 0 }));
+    fines.forEach(f => {
+      const d = new Date(f.date);
+      const idx = d.getMonth() >= 7 ? d.getMonth() - 7 : d.getMonth() + 5;
+      if (idx >= 0 && idx < 12) data[idx].amount += f.amount;
+    });
+    return data;
+  }, [fines]);
+
+  const maxAmount = Math.max(...monthlyData.map(d => d.amount), 1);
+
+  return (
+    <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
+      <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-3">Verlauf über das Geschäftsjahr</h2>
+      <div className="space-y-1">
+        {monthlyData.map(m => (
+          <div key={m.month} className="flex items-center gap-2">
+            <span className="text-xs text-stone-500 dark:text-stone-400 w-8">{m.month}</span>
+            <div className="flex-1 h-6 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+              {m.amount > 0 && (
+                <div
+                  className="h-full bg-emerald-600 rounded-full flex items-center justify-end pr-2"
+                  style={{ width: `${Math.min(100, (m.amount / maxAmount) * 100)}%`, minWidth: '40px' }}
+                >
+                  <span className="text-xs text-white font-medium">{formatCurrency(m.amount)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};
 
 const Dashboard = () => {
   const { canManageFines, isMitglied, isVorstand, isSpiess, user } = useAuth();
@@ -224,6 +294,12 @@ const Dashboard = () => {
               )}
             </div>
           </Card>
+
+          {/* Strafen nach Art */}
+          <PersonalFinesByType fines={recentFines} />
+
+          {/* Monatsverlauf */}
+          <PersonalMonthlyChart fines={recentFines} />
         </div>
       </div>
     );

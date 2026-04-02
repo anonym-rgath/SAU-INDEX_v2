@@ -69,7 +69,7 @@ const PermRow = ({ label, admin, spiess, vorstand, mitglied, section }) => {
 
 const Settings = () => {
   const { darkMode, toggleDarkMode } = useTheme();
-  const { canManageICS } = useAuth();
+  const { canManageICS, isMitglied } = useAuth();
   const [language, setLanguage] = useState('de');
 
   const [icsUrl, setIcsUrl] = useState('');
@@ -168,7 +168,8 @@ const Settings = () => {
         </SettingsSection>
       )}
 
-      {/* Benutzerrollen */}
+      {/* Benutzerrollen - nicht für Mitglied */}
+      {!isMitglied && (
       <SettingsSection icon={ShieldCheck} title="Benutzerrollen" description="Übersicht der verfügbaren Rollen und Berechtigungen">
         <div className="space-y-3">
           {[
@@ -204,7 +205,7 @@ const Settings = () => {
                 <PermRow label="Dashboard" admin="full" spiess="full" vorstand="full" mitglied="personal" />
                 <PermRow label="Termine" admin="full" spiess="full" vorstand="full" mitglied="read" />
                 <PermRow label="Strafenübersicht" admin="full" spiess="full" vorstand="own" mitglied="own" />
-                <PermRow label="Statistiken" admin="personal" spiess="personal" vorstand="personal" mitglied="personal" />
+                <PermRow label="Statistiken" admin="personal" spiess="personal" vorstand="personal" mitglied="none" />
                 <PermRow label="Statistiken (Erweitert)" admin="full" spiess="full" vorstand="anon" mitglied="none" />
                 <PermRow label="Einstellungen" admin="full" spiess="limited" vorstand="limited" mitglied="limited" />
 
@@ -228,12 +229,13 @@ const Settings = () => {
                 <PermRow section label="Einstellungen - Details" />
                 <PermRow label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
                 <PermRow label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <PermRow label="Benutzerrollen (Ansicht)" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <PermRow label="Benutzerrollen (Ansicht)" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
               </tbody>
             </table>
           </div>
         </div>
       </SettingsSection>
+      )}
     </div>
   );
 };
