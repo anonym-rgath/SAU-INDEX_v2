@@ -95,6 +95,7 @@ Full-stack application for a "Schützenzug" (marksmen's platoon, "Rheinzelmänne
 
 ## Changelog
 - 2026-04-02: Fixed ReferenceError in Members.js - `isVorstand` was not destructured from `useAuth()`, causing Benutzerverwaltung page crash for all roles.
+- 2026-04-02: Fixed FineTypes.js - used non-existent `canEditFineTypes` instead of `canManageFineTypes`, hiding CRUD buttons for all roles.
 
 ## Credentials
 - Admin: `admin` / `admin123`

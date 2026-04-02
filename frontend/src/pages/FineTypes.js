@@ -28,7 +28,7 @@ import { formatCurrency } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 const FineTypes = () => {
-  const { canEditFineTypes } = useAuth();
+  const { canManageFineTypes } = useAuth();
   const [fineTypes, setFineTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -131,7 +131,7 @@ const FineTypes = () => {
               Strafenkatalog
             </p>
           </div>
-          {canEditFineTypes && (
+          {canManageFineTypes && (
             <Button
               data-testid="add-finetype-button"
               onClick={openAddDialog}
@@ -166,7 +166,7 @@ const FineTypes = () => {
                       {fineType.amount !== null ? formatCurrency(fineType.amount) : 'Variabel'}
                     </p>
                   </div>
-                  {canEditFineTypes && (
+                  {canManageFineTypes && (
                     <div className="flex gap-2 flex-shrink-0 ml-2">
                       <Button
                         data-testid={`edit-finetype-${fineType.id}`}
