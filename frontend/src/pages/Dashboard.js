@@ -188,7 +188,7 @@ const Dashboard = () => {
               Dashboard
             </h1>
             <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-              {hasMemberProfile ? (personalStats?.member_name || user?.username) : 'Übersicht'}
+              {hasMemberProfile ? (personalStats?.member_name || user?.username) : ''}
             </p>
           </div>
           <div className="flex items-center gap-2 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full px-3 h-10 shadow-sm">
@@ -352,7 +352,7 @@ const Dashboard = () => {
               </div>
               <div className="space-y-2" data-testid="ranking-list">
                 {statistics.ranking && statistics.ranking.length > 0 ? (
-                  statistics.ranking.map((entry) => (
+                  statistics.ranking.slice(0, 5).map((entry) => (
                     <div
                       key={entry.member_id}
                       className="flex items-center gap-3 p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 transition-colors min-h-[72px]"

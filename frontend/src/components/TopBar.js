@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, User, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
+import { api } from '../lib/api';
 import ChangePasswordDialog from './ChangePasswordDialog';
 
 const TopBar = () => {
@@ -12,10 +13,32 @@ const TopBar = () => {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
-    const verwaltPaths = ['/members', '/fine-types', '/audit', '/settings'];
+    const verwaltPaths = ['/members', '/fine-types', '/audit', '/settings', '/profile', '/roles'];
     return verwaltPaths.includes(window.location.pathname);
   });
+
+  useEffect(() => {
+    loadAvatar();
+  }, [user]);
+
+  const loadAvatar = async () => {
+    try {
+      const res = await api.get('/profile');
+      if (res.data?.avatar_path) {
+        const imgRes = await api.get(`/profile/avatar/${res.data.avatar_path}`, { responseType: 'blob' });
+        setAvatarUrl(URL.createObjectURL(imgRes.data));
+      }
+    } catch {
+      // Kein Avatar vorhanden
+    }
+  };
+
+  const getInitials = () => {
+    const name = user?.username || '?';
+    return name.charAt(0).toUpperCase();
+  };
 
   const handleLogout = () => {
     logout();
@@ -194,9 +217,13 @@ const TopBar = () => {
           <div className="p-4 border-t border-stone-200 dark:border-stone-700 space-y-3">
             {/* Benutzer-Info */}
             <div className="flex items-center gap-3 px-2">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                <User className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
-              </div>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profilbild" className="w-10 h-10 rounded-full object-cover border-2 border-stone-200 dark:border-stone-700" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{getInitials()}</span>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-stone-900 dark:text-stone-100 truncate capitalize" data-testid="drawer-username">
                   {user?.username}
