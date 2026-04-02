@@ -18,28 +18,28 @@ const permIcon = (level) => {
 
 const permLabel = { full: 'Vollzugriff', yes: 'Ja', personal: 'Persönlich', own: 'Eigene', read: 'Lesen', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Nein' };
 
-const PermRow = ({ label, admin, spiess, vorstand, mitglied, section }) => {
-  if (section) {
-    return (
-      <tr className="bg-stone-50 dark:bg-stone-800/50">
-        <td colSpan={5} className="p-2 font-bold text-stone-700 dark:text-stone-300 text-xs tracking-wide uppercase">{label}</td>
-      </tr>
-    );
-  }
-  return (
-    <tr className="hover:bg-stone-50 dark:hover:bg-stone-800/30 transition-colors">
-      <td className="p-2.5 text-stone-700 dark:text-stone-300 font-medium">{label}</td>
-      {[admin, spiess, vorstand, mitglied].map((level, i) => (
-        <td key={i} className="text-center p-2.5">
-          <div className="flex flex-col items-center gap-0.5">
-            {permIcon(level)}
-            <span className="text-[9px] text-stone-400 dark:text-stone-500 leading-none">{permLabel[level]}</span>
-          </div>
-        </td>
-      ))}
-    </tr>
-  );
-};
+const Section = ({ label }) => (
+  <tr className="bg-stone-50 dark:bg-stone-800/50">
+    <td colSpan={5} className="p-2 font-bold text-stone-700 dark:text-stone-300 text-xs tracking-wide uppercase">{label}</td>
+  </tr>
+);
+
+const Row = ({ label, admin, spiess, vorstand, mitglied, sub }) => (
+  <tr className="hover:bg-stone-50 dark:hover:bg-stone-800/30 transition-colors">
+    <td className={`p-2.5 text-stone-700 dark:text-stone-300 ${sub ? 'pl-6 text-stone-500 dark:text-stone-400' : 'font-medium'}`}>
+      {sub && <span className="text-stone-300 dark:text-stone-600 mr-1.5">&#8227;</span>}
+      {label}
+    </td>
+    {[admin, spiess, vorstand, mitglied].map((level, i) => (
+      <td key={i} className="text-center p-2.5">
+        <div className="flex flex-col items-center gap-0.5">
+          {permIcon(level)}
+          <span className="text-[9px] text-stone-400 dark:text-stone-500 leading-none">{permLabel[level]}</span>
+        </div>
+      </td>
+    ))}
+  </tr>
+);
 
 const ROLES = [
   { role: 'Admin', desc: 'Vollzugriff auf alle Bereiche. System-Account, nicht als Mitglied geführt.', color: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' },
@@ -94,36 +94,46 @@ const Roles = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
-                <PermRow section label="Seiten" />
-                <PermRow label="Dashboard" admin="full" spiess="full" vorstand="full" mitglied="personal" />
-                <PermRow label="Termine" admin="full" spiess="full" vorstand="full" mitglied="read" />
-                <PermRow label="Strafenübersicht" admin="full" spiess="full" vorstand="own" mitglied="own" />
-                <PermRow label="Statistiken (Erweitert)" admin="full" spiess="full" vorstand="anon" mitglied="none" />
-                <PermRow label="Einstellungen" admin="full" spiess="full" vorstand="full" mitglied="limited" />
 
-                <PermRow section label="Verwaltung" />
-                <PermRow label="Profil" admin="full" spiess="full" vorstand="full" mitglied="full" />
-                <PermRow label="Benutzerrollen" admin="full" spiess="full" vorstand="full" mitglied="none" />
-                <PermRow label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
-                <PermRow label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <PermRow label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
-                <PermRow label="Audit-Log" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                {/* Dashboard */}
+                <Section label="Dashboard" />
+                <Row label="Zugriff" admin="full" spiess="full" vorstand="full" mitglied="personal" />
 
-                <PermRow section label="Termine - Details" />
-                <PermRow label="Strafen-Badge sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <PermRow label="Strafbetrag sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <PermRow label="Termine erstellen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <PermRow label="Zu-/Absage" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
-                <PermRow label="Rückmeldungen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                {/* Termine */}
+                <Section label="Termine" />
+                <Row label="Zugriff" admin="full" spiess="full" vorstand="full" mitglied="read" />
+                <Row sub label="Termine erstellen / bearbeiten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <Row sub label="Zu-/Absage" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <Row sub label="Rückmeldungen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <Row sub label="Strafen-Badge sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <Row sub label="Strafbetrag sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
 
-                <PermRow section label="Strafen" />
-                <PermRow label="Alle Strafen einsehen" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
-                <PermRow label="Eigene Strafen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
-                <PermRow label="Strafen erstellen" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
+                {/* Strafenübersicht */}
+                <Section label="Strafenübersicht" />
+                <Row label="Zugriff" admin="full" spiess="full" vorstand="own" mitglied="own" />
+                <Row sub label="Alle Strafen einsehen" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
+                <Row sub label="Eigene Strafen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <Row sub label="Strafen erstellen" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
 
-                <PermRow section label="Einstellungen - Details" />
-                <PermRow label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
-                <PermRow label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                {/* Statistiken */}
+                <Section label="Statistiken (Erweitert)" />
+                <Row label="Zugriff" admin="full" spiess="full" vorstand="anon" mitglied="none" />
+
+                {/* Einstellungen */}
+                <Section label="Einstellungen" />
+                <Row label="Zugriff" admin="full" spiess="full" vorstand="full" mitglied="limited" />
+                <Row sub label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <Row sub label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+
+                {/* Verwaltung */}
+                <Section label="Verwaltung" />
+                <Row label="Profil" admin="full" spiess="full" vorstand="full" mitglied="full" />
+                <Row label="Benutzerrollen" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <Row label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <Row sub label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <Row label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <Row label="Audit-Log" admin="full" spiess="full" vorstand="full" mitglied="none" />
+
               </tbody>
             </table>
           </div>
