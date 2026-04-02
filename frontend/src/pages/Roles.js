@@ -42,7 +42,7 @@ const Row = ({ label, admin, spiess, vorstand, mitglied, sub }) => (
 );
 
 const ROLES = [
-  { role: 'Admin', desc: 'Vollzugriff auf alle Bereiche. System-Account, nicht als Mitglied geführt.', color: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' },
+  { role: 'Admin', desc: 'Vollzugriff auf alle Bereiche. System-Account, Nicht als Mitglied geführt.', color: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' },
   { role: 'Spieß', desc: 'Verwaltet Mitglieder, Strafen und Termine. Sieht erweiterte Statistiken mit vollem Einblick.', color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
   { role: 'Vorstand', desc: 'Verwaltet Mitglieder, Strafen und Termine. Sieht erweiterte Statistiken anonymisiert.', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
   { role: 'Mitglied', desc: 'Sieht persönliches Dashboard und eigene Strafen. Termine ohne Strafen-Details.', color: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
