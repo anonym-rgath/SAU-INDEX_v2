@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart3, BarChart4, User, Key, Shield, CalendarDays, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, User, Key, Shield, CalendarDays, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -27,8 +27,7 @@ const TopBar = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/calendar', icon: CalendarDays, label: 'Termine' },
     { path: '/fines', icon: Receipt, label: 'Strafenübersicht' },
-    isAdmin && { path: '/statistics', icon: BarChart3, label: 'Statistiken' },
-    canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken (Erweitert)' },
+    canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken' },
   ].filter(Boolean);
 
   // Administration sub-items

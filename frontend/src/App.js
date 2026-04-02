@@ -11,7 +11,6 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Members = lazy(() => import('./pages/Members'));
 const FineTypes = lazy(() => import('./pages/FineTypes'));
 const Fines = lazy(() => import('./pages/Fines'));
-const Statistics = lazy(() => import('./pages/Statistics'));
 const StatisticsAdvanced = lazy(() => import('./pages/StatisticsAdvanced'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
@@ -34,7 +33,7 @@ const ManagementRoute = ({ children }) => {
 // Nur Admin + Spieß + Vorstand (Erweiterte Statistiken)
 const AdvancedStatsRoute = ({ children }) => {
   const { canSeeAdvancedStats } = useAuth();
-  return canSeeAdvancedStats ? children : <Navigate to="/statistics" replace />;
+  return canSeeAdvancedStats ? children : <Navigate to="/dashboard" replace />;
 };
 
 const AdminRoute = ({ children }) => {
@@ -55,7 +54,7 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="fines" element={<Fines />} />
-              <Route path="statistics" element={<AdminRoute><Statistics /></AdminRoute>} />
+              <Route path="statistics" element={<Navigate to="/statistics-advanced" replace />} />
               <Route path="statistics-advanced" element={<AdvancedStatsRoute><StatisticsAdvanced /></AdvancedStatsRoute>} />
               <Route path="members" element={<ManagementRoute><Members /></ManagementRoute>} />
               <Route path="fine-types" element={<ManagementRoute><FineTypes /></ManagementRoute>} />
