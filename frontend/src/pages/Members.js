@@ -184,7 +184,7 @@ const Members = () => {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="text-stone-500">Laden...</div></div>;
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="text-stone-500 dark:text-stone-400">Laden...</div></div>;
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
@@ -221,9 +221,9 @@ const Members = () => {
           <div className="flex items-center gap-3 mb-1">
             <Users className="w-5 h-5 text-emerald-700" />
             <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Alle Mitglieder</h2>
-            <span className="text-sm text-stone-500">({activeMembers.length})</span>
+            <span className="text-sm text-stone-500 dark:text-stone-400">({activeMembers.length})</span>
           </div>
-          <p className="text-sm text-stone-500 mb-4 ml-8">Aktive und passive Vereinsmitglieder</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mb-4 ml-8">Aktive und passive Vereinsmitglieder</p>
 
           <div className="space-y-2" data-testid="members-list">
             {activeMembers.length > 0 ? getSortedMembers(activeMembers).map((member) => (
@@ -231,7 +231,7 @@ const Members = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-stone-900 dark:text-stone-100">{getFullName(member)}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${member.status === 'aktiv' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${member.status === 'aktiv' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'}`}>
                       {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
                     </span>
                     {member.user_info && (
@@ -250,7 +250,7 @@ const Members = () => {
                     <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100" title="QR-Code">
                       <QrCode className="w-4 h-4" />
                     </Button>
-                    <Button data-testid={`edit-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50" title="Bearbeiten">
+                    <Button data-testid={`edit-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600" title="Bearbeiten">
                       <Pencil className="w-4 h-4" />
                     </Button>
                   </div>
@@ -263,25 +263,25 @@ const Members = () => {
         </Card>
 
         {archivedMembers.length > 0 && (
-          <Card className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 mt-6">
+          <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4 mt-6">
             <div className="flex items-center gap-3 mb-1">
-              <Archive className="w-5 h-5 text-stone-500" />
-              <h2 className="text-xl font-bold text-stone-900 tracking-tight">Archiv</h2>
-              <span className="text-sm text-stone-500">({archivedMembers.length})</span>
+              <Archive className="w-5 h-5 text-stone-500 dark:text-stone-400" />
+              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Archiv</h2>
+              <span className="text-sm text-stone-500 dark:text-stone-400">({archivedMembers.length})</span>
             </div>
-            <p className="text-sm text-stone-500 mb-4">Ausgetretene Mitglieder (erscheinen nicht in Rankings)</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Ausgetretene Mitglieder (erscheinen nicht in Rankings)</p>
             <div className="space-y-2" data-testid="archived-members-list">
               {archivedMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-100/50 min-h-[72px] opacity-75" data-testid={`archived-member-item-${member.id}`}>
+                <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-100/50 dark:bg-stone-800/50 min-h-[72px] opacity-75" data-testid={`archived-member-item-${member.id}`}>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-stone-600">{getFullName(member)}</p>
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-stone-300 text-stone-600">Archiviert</span>
+                      <p className="font-medium text-stone-600 dark:text-stone-300">{getFullName(member)}</p>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-stone-300 dark:bg-stone-600 text-stone-600 dark:text-stone-300">Archiviert</span>
                     </div>
                   </div>
                   {canManageMembers && (
                     <div className="flex gap-2 flex-shrink-0 ml-2">
-                      <Button data-testid={`edit-archived-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50" title="Bearbeiten">
+                      <Button data-testid={`edit-archived-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600" title="Bearbeiten">
                         <Pencil className="w-4 h-4" />
                       </Button>
                       <Button data-testid={`delete-archived-member-${member.id}`} onClick={() => { setDeletingMember(member); setDeleteDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100" title="Endgültig löschen">
@@ -307,11 +307,11 @@ const Members = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Vorname</Label>
-                <Input data-testid="member-firstName-input" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} placeholder="Vorname" className="h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base" required />
+                <Input data-testid="member-firstName-input" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} placeholder="Vorname" className="h-12 rounded-xl border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 focus:bg-white dark:focus:bg-stone-700 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base" required />
               </div>
               <div className="space-y-2">
                 <Label>Nachname</Label>
-                <Input data-testid="member-lastName-input" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} placeholder="Nachname" className="h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base" required />
+                <Input data-testid="member-lastName-input" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} placeholder="Nachname" className="h-12 rounded-xl border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 focus:bg-white dark:focus:bg-stone-700 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base" required />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
@@ -328,7 +328,7 @@ const Members = () => {
               {/* App-Zugang */}
               {canManageAccess && formData.status !== 'archiviert' && (
                 <>
-                  <div className="border-t border-stone-200 pt-4">
+                  <div className="border-t border-stone-200 dark:border-stone-700 pt-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <Label className="text-base font-semibold">App-Zugang</Label>
@@ -339,16 +339,16 @@ const Members = () => {
                   </div>
 
                   {formData.appAccess && (
-                    <div className="space-y-3 bg-stone-50 rounded-xl p-4">
+                    <div className="space-y-3 bg-stone-50 dark:bg-stone-800 rounded-xl p-4">
                       <div className="space-y-2">
                         <Label>Benutzername</Label>
-                        <Input data-testid="member-username-input" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="z.B. vorname.nachname" className="h-11 rounded-xl border-stone-200 bg-white text-sm" required />
+                        <Input data-testid="member-username-input" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="z.B. vorname.nachname" className="h-11 rounded-xl border-stone-200 dark:border-stone-600 bg-white dark:bg-stone-700 text-sm" required />
                       </div>
                       <div className="space-y-2">
                         <Label>{editingMember?.user_info ? 'Neues Passwort (leer = unverändert)' : 'Passwort'}</Label>
                         <div className="relative">
-                          <Input data-testid="member-password-input" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder={editingMember?.user_info ? 'Nur bei Änderung eingeben' : 'Min. 8 Zeichen, 1 Zahl'} className="h-11 rounded-xl border-stone-200 bg-white text-sm pr-10" required={!editingMember?.user_info} />
-                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                          <Input data-testid="member-password-input" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder={editingMember?.user_info ? 'Nur bei Änderung eingeben' : 'Min. 8 Zeichen, 1 Zahl'} className="h-11 rounded-xl border-stone-200 dark:border-stone-600 bg-white dark:bg-stone-700 text-sm pr-10" required={!editingMember?.user_info} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
@@ -356,7 +356,7 @@ const Members = () => {
                       <div className="space-y-2">
                         <Label>Rolle</Label>
                         <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                          <SelectTrigger data-testid="member-role-select" className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                          <SelectTrigger data-testid="member-role-select" className="h-11 rounded-xl bg-white dark:bg-stone-700"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="mitglied">Mitglied</SelectItem>
                             <SelectItem value="vorstand">Vorstand</SelectItem>
@@ -370,7 +370,7 @@ const Members = () => {
               )}
             </div>
             <DialogFooter>
-              <Button type="button" onClick={closeDialog} className="h-11 px-6 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50">Abbrechen</Button>
+              <Button type="button" onClick={closeDialog} className="h-11 px-6 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600">Abbrechen</Button>
               <Button data-testid="submit-member-button" type="submit" className="h-11 px-8 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95 shadow-lg shadow-emerald-700/20">Speichern</Button>
             </DialogFooter>
           </form>
