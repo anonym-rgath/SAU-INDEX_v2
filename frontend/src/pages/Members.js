@@ -43,7 +43,8 @@ const ROLE_LABELS = {
 };
 
 const Members = () => {
-  const { canManageMembers, isAdmin } = useAuth();
+  const { canManageMembers, isAdmin, isSpiess } = useAuth();
+  const canManageAccess = isAdmin || isSpiess;
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -325,7 +326,7 @@ const Members = () => {
               </div>
 
               {/* App-Zugang */}
-              {isAdmin && formData.status !== 'archiviert' && (
+              {canManageAccess && formData.status !== 'archiviert' && (
                 <>
                   <div className="border-t border-stone-200 pt-4">
                     <div className="flex items-center justify-between">

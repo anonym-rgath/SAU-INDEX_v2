@@ -80,7 +80,7 @@ const PersonalMonthlyChart = ({ fines }) => {
 };
 
 const Dashboard = () => {
-  const { canManageFines, isMitglied, isVorstand, isSpiess, user } = useAuth();
+  const { canManageFines, isMitglied, isVorstand, isSpiess, isAdmin, user } = useAuth();
   const [fiscalYear, setFiscalYear] = useState('');
   const [fiscalYears, setFiscalYears] = useState([]);
   const [statistics, setStatistics] = useState(null);
@@ -97,6 +97,8 @@ const Dashboard = () => {
   const showPersonalDashboard = isMitglied || isVorstand;
   // Spieß mit member_id zeigt zusätzlich seine eigenen Strafen im Admin-Dashboard
   const spiessHasLinkedMember = isSpiess && user?.member_id;
+  // Persönliche Charts für alle nicht-Admin Rollen
+  const showPersonalCharts = !isAdmin && user?.member_id;
 
   useEffect(() => {
     loadInitialData();
@@ -160,7 +162,7 @@ const Dashboard = () => {
           // Eigene Strafen für Spieß laden
           const allFines = results[1].data;
           const ownFines = allFines.filter(f => f.member_id === user.member_id);
-          setMyFines(ownFines.slice(0, 5));
+          setMyFines(ownFines);
         }
       }
     } catch (error) {
@@ -547,6 +549,14 @@ const Dashboard = () => {
                 </div>
               </Card>
             )}
+
+          {/* Persönliche Charts für Spieß mit verknüpftem Mitglied */}
+          {showPersonalCharts && (
+            <>
+              <PersonalFinesByType fines={myFines.length > 0 ? myFines : recentFines} />
+              <PersonalMonthlyChart fines={myFines.length > 0 ? myFines : recentFines} />
+            </>
+          )}
 
           {/* Floating Action Button - nur für Admin */}
           {canManageFines && (

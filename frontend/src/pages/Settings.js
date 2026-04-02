@@ -205,12 +205,13 @@ const Settings = () => {
                 <PermRow label="Dashboard" admin="full" spiess="full" vorstand="full" mitglied="personal" />
                 <PermRow label="Termine" admin="full" spiess="full" vorstand="full" mitglied="read" />
                 <PermRow label="Strafenübersicht" admin="full" spiess="full" vorstand="own" mitglied="own" />
-                <PermRow label="Statistiken" admin="personal" spiess="personal" vorstand="personal" mitglied="none" />
+                <PermRow label="Statistiken" admin="personal" spiess="none" vorstand="none" mitglied="none" />
                 <PermRow label="Statistiken (Erweitert)" admin="full" spiess="full" vorstand="anon" mitglied="none" />
-                <PermRow label="Einstellungen" admin="full" spiess="limited" vorstand="limited" mitglied="limited" />
+                <PermRow label="Einstellungen" admin="full" spiess="full" vorstand="full" mitglied="limited" />
 
                 <PermRow section label="Verwaltung" />
                 <PermRow label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <PermRow label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
                 <PermRow label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <PermRow label="Audit-Log" admin="full" spiess="none" vorstand="none" mitglied="none" />
 

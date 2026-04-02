@@ -55,7 +55,7 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="fines" element={<Fines />} />
-              <Route path="statistics" element={<ManagementRoute><Statistics /></ManagementRoute>} />
+              <Route path="statistics" element={<AdminRoute><Statistics /></AdminRoute>} />
               <Route path="statistics-advanced" element={<AdvancedStatsRoute><StatisticsAdvanced /></AdvancedStatsRoute>} />
               <Route path="members" element={<ManagementRoute><Members /></ManagementRoute>} />
               <Route path="fine-types" element={<ManagementRoute><FineTypes /></ManagementRoute>} />
