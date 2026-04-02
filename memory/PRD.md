@@ -95,7 +95,8 @@ Full-stack application for a "Schützenzug" (marksmen's platoon, "Rheinzelmänne
 
 ## Changelog
 - 2026-04-02: Fixed ReferenceError in Members.js - `isVorstand` was not destructured from `useAuth()`, causing Benutzerverwaltung page crash for all roles.
-- 2026-04-02: Removed standalone Statistics page (`/statistics`, admin-only). Merged into single "Statistiken" menu entry pointing to `/statistics-advanced`.
+- 2026-04-02: Removed standalone Statistics page (`/statistics`, admin-only). Merged into single "Statistiken (Erweitert)" menu entry pointing to `/statistics-advanced`.
+- 2026-04-02: Created dedicated Benutzerrollen page (`/roles`) with role descriptions and permissions matrix. Removed from Settings page. Accessible for Admin/Spieß/Vorstand.
 
 ## Credentials
 - Admin: `admin` / `admin123`

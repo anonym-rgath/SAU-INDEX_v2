@@ -12,6 +12,7 @@ const Members = lazy(() => import('./pages/Members'));
 const FineTypes = lazy(() => import('./pages/FineTypes'));
 const Fines = lazy(() => import('./pages/Fines'));
 const StatisticsAdvanced = lazy(() => import('./pages/StatisticsAdvanced'));
+const Roles = lazy(() => import('./pages/Roles'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -57,11 +58,11 @@ function App() {
               <Route path="statistics" element={<Navigate to="/statistics-advanced" replace />} />
               <Route path="statistics-advanced" element={<AdvancedStatsRoute><StatisticsAdvanced /></AdvancedStatsRoute>} />
               <Route path="members" element={<ManagementRoute><Members /></ManagementRoute>} />
+              <Route path="roles" element={<ManagementRoute><Roles /></ManagementRoute>} />
               <Route path="fine-types" element={<ManagementRoute><FineTypes /></ManagementRoute>} />
               <Route path="users" element={<Navigate to="/members" replace />} />
               <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
               <Route path="settings" element={<Settings />} />
-              <Route path="roles" element={<Navigate to="/settings" replace />} />
             </Route>
             <Route path="*" element={<RoleBasedRedirect />} />
           </Routes>

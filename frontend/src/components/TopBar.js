@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, User, Key, Shield, CalendarDays, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, User, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -32,6 +32,7 @@ const TopBar = () => {
 
   // Administration sub-items
   const verwaltungItems = [
+    canManageMembers && { path: '/roles', icon: ShieldCheck, label: 'Benutzerrollen' },
     canManageMembers && { path: '/members', icon: Users, label: 'Benutzerverwaltung' },
     canManageFineTypes && { path: '/fine-types', icon: Tag, label: 'Strafenarten' },
     isAdmin && { path: '/audit', icon: Shield, label: 'Audit-Log' },
