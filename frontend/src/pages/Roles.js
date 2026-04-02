@@ -6,7 +6,7 @@ const permIcon = (level) => {
     case 'full': return <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-5 text-center">V</span>;
     case 'yes': return <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-5 text-center">V</span>;
     case 'personal': return <span className="inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-5 text-center">P</span>;
-    case 'own': return <span className="inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-5 text-center">E</span>;
+    case 'own': return <span className="inline-block w-5 h-5 rounded-full bg-violet-500 text-white text-[10px] font-bold leading-5 text-center">E</span>;
     case 'read': return <span className="inline-block w-5 h-5 rounded-full bg-stone-400 text-white text-[10px] font-bold leading-5 text-center">L</span>;
     case 'limited': return <span className="inline-block w-5 h-5 rounded-full bg-stone-400 text-white text-[10px] font-bold leading-5 text-center">T</span>;
     case 'anon': return <span className="inline-block w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-5 text-center">A</span>;
@@ -16,7 +16,7 @@ const permIcon = (level) => {
   }
 };
 
-const permLabel = { full: 'Vollzugriff', yes: 'Vollzugriff', personal: 'Persönlich', own: 'Eigene', read: 'Lesen', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Nein' };
+const permLabel = { full: 'Vollzugriff', yes: 'Vollzugriff', personal: 'Persönlich', own: 'Eigene', read: 'Lesen', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Kein Zugriff' };
 
 const Section = ({ label }) => (
   <tr className="bg-stone-50 dark:bg-stone-800/50">
