@@ -93,5 +93,9 @@ Full-stack application for a "Schützenzug" (marksmen's platoon, "Rheinzelmänne
 - Personal Stats: `GET /api/statistics/personal` (all roles)
 - Settings: `GET/PUT /api/settings/ics` (admin only)
 
+## Changelog
+- 2026-04-02: Fixed ReferenceError in Members.js - `isVorstand` was not destructured from `useAuth()`, causing Benutzerverwaltung page crash for all roles.
+
 ## Credentials
 - Admin: `admin` / `admin123`
+- Vorstand (Test): `robin` / `Vorstand123!`
