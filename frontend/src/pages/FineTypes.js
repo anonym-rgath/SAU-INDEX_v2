@@ -114,20 +114,20 @@ const FineTypes = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-stone-500">Laden...</div>
+        <div className="text-stone-500 dark:text-stone-400">Laden...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
               Strafenarten
             </h1>
-            <p className="text-sm text-stone-500 mt-1">
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
               Strafenkatalog
             </p>
           </div>
@@ -144,10 +144,10 @@ const FineTypes = () => {
           )}
         </div>
 
-        <Card className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
+        <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
           <div className="flex items-center gap-3 mb-4">
-            <Tag className="w-5 h-5 text-emerald-700" />
-            <h2 className="text-xl font-bold text-stone-900 tracking-tight">
+            <Tag className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
+            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
               Alle Strafenarten
             </h2>
           </div>
@@ -157,12 +157,12 @@ const FineTypes = () => {
               fineTypes.map((fineType) => (
                 <div
                   key={fineType.id}
-                  className="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50 active:bg-stone-100 transition-colors min-h-[72px]"
+                  className="flex items-center justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 active:bg-stone-100 dark:active:bg-stone-700 transition-colors min-h-[72px]"
                   data-testid={`finetype-item-${fineType.id}`}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-stone-900 truncate">{fineType.label}</p>
-                    <p className="text-sm text-stone-500">
+                    <p className="font-bold text-stone-900 dark:text-stone-100 truncate">{fineType.label}</p>
+                    <p className="text-sm text-stone-500 dark:text-stone-400">
                       {fineType.amount !== null ? formatCurrency(fineType.amount) : 'Variabel'}
                     </p>
                   </div>
@@ -171,14 +171,14 @@ const FineTypes = () => {
                       <Button
                         data-testid={`edit-finetype-${fineType.id}`}
                         onClick={() => openEditDialog(fineType)}
-                        className="h-10 w-10 p-0 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors"
+                        className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600 transition-colors"
                       >
                         <Pencil className="w-4 h-4" />
                       </Button>
                       <Button
                         data-testid={`delete-finetype-${fineType.id}`}
                         onClick={() => openDeleteDialog(fineType)}
-                        className="h-10 w-10 p-0 rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors"
+                        className="h-10 w-10 p-0 rounded-full bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -187,7 +187,7 @@ const FineTypes = () => {
                 </div>
               ))
             ) : (
-              <p className="text-center text-stone-400 py-8">
+              <p className="text-center text-stone-400 dark:text-stone-500 py-8">
                 Noch keine Strafenarten
               </p>
             )}
@@ -215,12 +215,12 @@ const FineTypes = () => {
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                   placeholder="z.B. Zu spät"
-                  className="h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base"
+                  className="h-12 rounded-xl border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 focus:bg-white dark:focus:bg-stone-700 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Betrag (€)</Label>
+                <Label htmlFor="amount">Betrag (EUR)</Label>
                 <Input
                   data-testid="finetype-amount-input"
                   id="amount"
@@ -229,7 +229,7 @@ const FineTypes = () => {
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   placeholder="Leer lassen für variablen Betrag"
-                  className="h-12 rounded-xl border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base"
+                  className="h-12 rounded-xl border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 focus:bg-white dark:focus:bg-stone-700 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-base"
                 />
               </div>
             </div>
@@ -237,7 +237,7 @@ const FineTypes = () => {
               <Button
                 type="button"
                 onClick={() => setDialogOpen(false)}
-                className="h-11 px-6 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors"
+                className="h-11 px-6 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600 transition-colors"
               >
                 Abbrechen
               </Button>

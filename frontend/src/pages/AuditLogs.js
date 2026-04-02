@@ -55,12 +55,12 @@ const AuditLogs = () => {
 
   const getActionIcon = (action) => {
     const icons = {
-      'login_success': <LogIn className="w-4 h-4 text-emerald-600" />,
-      'login_failed': <XCircle className="w-4 h-4 text-red-500" />,
-      'logout': <LogOut className="w-4 h-4 text-stone-500" />,
-      'create': <UserPlus className="w-4 h-4 text-blue-500" />,
-      'update': <Edit className="w-4 h-4 text-amber-500" />,
-      'delete': <Trash2 className="w-4 h-4 text-red-500" />,
+      'login_success': <LogIn className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
+      'login_failed': <XCircle className="w-4 h-4 text-red-500 dark:text-red-400" />,
+      'logout': <LogOut className="w-4 h-4 text-stone-500 dark:text-stone-400" />,
+      'create': <UserPlus className="w-4 h-4 text-blue-500 dark:text-blue-400" />,
+      'update': <Edit className="w-4 h-4 text-amber-500 dark:text-amber-400" />,
+      'delete': <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />,
     };
     return icons[action] || <AlertTriangle className="w-4 h-4 text-stone-400" />;
   };
@@ -79,14 +79,14 @@ const AuditLogs = () => {
 
   const getActionColor = (action) => {
     const colors = {
-      'login_success': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      'login_failed': 'bg-red-50 text-red-700 border-red-200',
-      'logout': 'bg-stone-50 text-stone-700 border-stone-200',
-      'create': 'bg-blue-50 text-blue-700 border-blue-200',
-      'update': 'bg-amber-50 text-amber-700 border-amber-200',
-      'delete': 'bg-red-50 text-red-700 border-red-200',
+      'login_success': 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+      'login_failed': 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800',
+      'logout': 'bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-600',
+      'create': 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      'update': 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+      'delete': 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800',
     };
-    return colors[action] || 'bg-stone-50 text-stone-700 border-stone-200';
+    return colors[action] || 'bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-600';
   };
 
   const getResourceLabel = (type) => {
@@ -96,6 +96,7 @@ const AuditLogs = () => {
       'member': 'Mitglied',
       'fine': 'Strafe',
       'fine_type': 'Strafenart',
+      'profile': 'Profil',
     };
     return labels[type] || type;
   };
@@ -128,16 +129,16 @@ const AuditLogs = () => {
   const uniqueActions = [...new Set(logs.map(log => log.action))];
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
-            <Shield className="w-6 h-6 text-emerald-700" />
+          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight flex items-center gap-2">
+            <Shield className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
             Audit-Log
           </h1>
-          <p className="text-stone-500 mt-1">
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
             Übersicht aller System-Aktivitäten
           </p>
         </div>
@@ -155,7 +156,7 @@ const AuditLogs = () => {
       {/* Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
           <Input
             placeholder="Suchen nach Benutzer, IP, Details..."
             value={searchTerm}
@@ -181,64 +182,64 @@ const AuditLogs = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl p-4 border border-stone-200">
-          <div className="flex items-center gap-2 text-stone-500 text-sm mb-1">
+        <div className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400 text-sm mb-1">
             <Clock className="w-4 h-4" />
             Gesamt
           </div>
-          <p className="text-2xl font-bold text-stone-900">{logs.length}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">{logs.length}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-stone-200">
-          <div className="flex items-center gap-2 text-emerald-600 text-sm mb-1">
+        <div className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm mb-1">
             <CheckCircle className="w-4 h-4" />
             Erfolgreiche Logins
           </div>
-          <p className="text-2xl font-bold text-emerald-700">
+          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
             {logs.filter(l => l.action === 'login_success').length}
           </p>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-stone-200">
-          <div className="flex items-center gap-2 text-red-500 text-sm mb-1">
+        <div className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-2 text-red-500 dark:text-red-400 text-sm mb-1">
             <XCircle className="w-4 h-4" />
             Fehlgeschlagene Logins
           </div>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
             {logs.filter(l => l.action === 'login_failed').length}
           </p>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-stone-200">
-          <div className="flex items-center gap-2 text-blue-500 text-sm mb-1">
+        <div className="bg-white dark:bg-stone-900 rounded-xl p-4 border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-2 text-blue-500 dark:text-blue-400 text-sm mb-1">
             <Edit className="w-4 h-4" />
             Änderungen
           </div>
-          <p className="text-2xl font-bold text-blue-600">
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {logs.filter(l => ['create', 'update', 'delete'].includes(l.action)).length}
           </p>
         </div>
       </div>
 
       {/* Log List */}
-      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-emerald-600 mb-3" />
-            <p className="text-stone-500">Lade Audit-Logs...</p>
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-emerald-600 dark:text-emerald-400 mb-3" />
+            <p className="text-stone-500 dark:text-stone-400">Lade Audit-Logs...</p>
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="p-8 text-center">
-            <Shield className="w-12 h-12 mx-auto text-stone-300 mb-3" />
-            <p className="text-stone-500">Keine Einträge gefunden</p>
+            <Shield className="w-12 h-12 mx-auto text-stone-300 dark:text-stone-600 mb-3" />
+            <p className="text-stone-500 dark:text-stone-400">Keine Einträge gefunden</p>
           </div>
         ) : (
-          <div className="divide-y divide-stone-100">
+          <div className="divide-y divide-stone-100 dark:divide-stone-700">
             {filteredLogs.map((log, index) => (
               <div
                 key={log.id || index}
-                className="p-4 hover:bg-stone-50 transition-colors"
+                className="p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
               >
                 <div className="flex items-start gap-3">
                   {/* Action Icon */}
-                  <div className={`p-2 rounded-lg ${getActionColor(log.action).split(' ')[0]}`}>
+                  <div className={`p-2 rounded-lg ${getActionColor(log.action).split(' ')[0]} ${getActionColor(log.action).split(' ')[1]}`}>
                     {getActionIcon(log.action)}
                   </div>
                   
@@ -248,18 +249,18 @@ const AuditLogs = () => {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getActionColor(log.action)}`}>
                         {getActionLabel(log.action)}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400">
                         {getResourceLabel(log.resource_type)}
                       </span>
                     </div>
                     
                     {log.details && (
-                      <p className="text-sm text-stone-700 mb-2">
+                      <p className="text-sm text-stone-700 dark:text-stone-300 mb-2">
                         {log.details}
                       </p>
                     )}
                     
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
                       {log.username && (
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
@@ -286,7 +287,7 @@ const AuditLogs = () => {
       </div>
 
       {/* Info */}
-      <p className="text-xs text-stone-400 text-center">
+      <p className="text-xs text-stone-400 dark:text-stone-500 text-center">
         Zeigt die letzten 500 Einträge. Ältere Einträge werden automatisch archiviert.
       </p>
       </div>

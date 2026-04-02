@@ -211,7 +211,7 @@ const Dashboard = () => {
         <div className="max-w-2xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
                 Meine Übersicht
               </h1>
               <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
@@ -235,7 +235,7 @@ const Dashboard = () => {
           </div>
 
           {/* Persönliche Statistiken */}
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100 rounded-2xl shadow-sm p-4 mb-6">
+          <Card className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-900/20 dark:to-stone-900 border-emerald-100 dark:border-emerald-900/40 rounded-2xl shadow-sm p-4 mb-6">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-xs text-stone-400 uppercase tracking-wider font-bold mb-0.5">
@@ -251,7 +251,7 @@ const Dashboard = () => {
               <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-0.5">
                 {formatCurrency(personalStats?.total_amount || 0)}
               </p>
-              <p className="text-sm text-stone-600">{personalStats?.total_fines || 0} Einträge</p>
+              <p className="text-sm text-stone-600 dark:text-stone-400">{personalStats?.total_fines || 0} Einträge</p>
             </div>
           </Card>
 
@@ -259,7 +259,7 @@ const Dashboard = () => {
           <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
             <div className="flex items-center gap-3 mb-4">
               <User className="w-5 h-5 text-emerald-700" />
-              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
                 Meine Strafen
               </h2>
             </div>
@@ -309,11 +309,11 @@ const Dashboard = () => {
 
   // Admin/Spiess Dashboard (Original)
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
               Dashboard
             </h1>
             <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
@@ -342,7 +342,7 @@ const Dashboard = () => {
             <Button
               data-testid="scan-demo-button"
               onClick={() => setScanDialogOpen(true)}
-              className="h-11 px-6 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 transition-colors"
+              className="h-11 px-6 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors"
             >
               <QrCode className="w-4 h-4 mr-2" />
               QR Scan
@@ -363,7 +363,7 @@ const Dashboard = () => {
         )}
 
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-pink-50 to-white border-pink-100 rounded-2xl shadow-sm p-4">
+          <Card className="bg-gradient-to-br from-pink-50 to-white dark:from-pink-900/20 dark:to-stone-900 border-pink-100 dark:border-pink-900/40 rounded-2xl shadow-sm p-4">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-xs text-stone-400 uppercase tracking-wider font-bold mb-0.5">
@@ -381,7 +381,7 @@ const Dashboard = () => {
                   <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-0.5">
                     {formatCurrency(statistics.sau.total)}
                   </p>
-                  <p className="text-sm text-stone-600 truncate">{statistics.sau.member_name}</p>
+                  <p className="text-sm text-stone-600 dark:text-stone-400 truncate">{statistics.sau.member_name}</p>
                 </>
               ) : (
                 <p className="text-stone-400 text-sm">Keine Daten</p>
@@ -389,7 +389,7 @@ const Dashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-gradient-to-br from-stone-50 to-white border-stone-200 rounded-2xl shadow-sm p-4">
+          <Card className="bg-gradient-to-br from-stone-50 to-white dark:from-stone-800 dark:to-stone-900 border-stone-200 dark:border-stone-700 rounded-2xl shadow-sm p-4">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-xs text-stone-400 uppercase tracking-wider font-bold mb-0.5">
@@ -407,7 +407,7 @@ const Dashboard = () => {
                   <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-0.5">
                     {formatCurrency(statistics.laemmchen.total)}
                   </p>
-                  <p className="text-sm text-stone-600 truncate">{statistics.laemmchen.member_name}</p>
+                  <p className="text-sm text-stone-600 dark:text-stone-400 truncate">{statistics.laemmchen.member_name}</p>
                 </>
               ) : (
                 <p className="text-stone-400 text-sm">Keine Daten</p>
@@ -419,7 +419,7 @@ const Dashboard = () => {
             <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4 mb-6">
               <div className="flex items-center gap-3 mb-4">
                 <Trophy className="w-5 h-5 text-emerald-700" />
-                <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
+                <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
                   Ranking {fiscalYear}
                 </h2>
               </div>
@@ -452,7 +452,7 @@ const Dashboard = () => {
             </Card>
 
             <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
-              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight mb-4">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
                 Letzte Strafen
               </h2>
               
@@ -489,11 +489,11 @@ const Dashboard = () => {
 
             {/* Meine Strafen - nur für Spieß mit verlinktem Mitglied */}
             {spiessHasLinkedMember && personalStats && (
-              <Card className="bg-gradient-to-br from-emerald-50 to-white border-0 rounded-2xl shadow-sm p-4 mt-6">
+              <Card className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-900/20 dark:to-stone-900 border-0 dark:border dark:border-emerald-900/40 rounded-2xl shadow-sm p-4 mt-6">
                 <div className="flex items-center gap-3 mb-4">
                   <User className="w-5 h-5 text-emerald-700" />
                   <div>
-                    <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 dark:text-stone-100 tracking-tight">
+                    <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
                       Meine Strafen
                     </h2>
                     <p className="text-xs text-stone-500">
@@ -503,7 +503,7 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Persönliche Statistik */}
-                <div className="bg-white/60 rounded-xl p-3 mb-4">
+                <div className="bg-white/60 dark:bg-stone-800/60 rounded-xl p-3 mb-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-stone-400 uppercase tracking-wider font-bold">Gesamt</p>
@@ -521,7 +521,7 @@ const Dashboard = () => {
                     myFines.map((fine) => (
                       <div
                         key={fine.id}
-                        className="p-3 rounded-xl bg-white/50"
+                        className="p-3 rounded-xl bg-white/50 dark:bg-stone-800/50"
                       >
                         <div className="flex items-start justify-between mb-1">
                           <p className="font-semibold text-stone-900 dark:text-stone-100">
