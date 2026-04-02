@@ -69,7 +69,7 @@ const Settings = () => {
   };
 
   return (
-    <div data-testid="settings-page" className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div data-testid="settings-page" className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
       <div>
         <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Einstellungen</h1>
         <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">App-Konfiguration und Darstellung</p>
