@@ -1827,7 +1827,7 @@ async def _sync_ics_calendar():
     return {"synced": len(ics_events), "created": created, "updated": updated, "deleted": deleted}
 
 @api_router.get("/settings/ics")
-async def get_ics_settings(auth=Depends(require_admin)):
+async def get_ics_settings(auth=Depends(require_any_role)):
     """ICS-Einstellungen abrufen (nur Admin)"""
     settings = await db.settings.find_one({"key": "ics_config"}, {"_id": 0})
     if not settings:
@@ -1839,7 +1839,7 @@ async def get_ics_settings(auth=Depends(require_admin)):
     }
 
 @api_router.put("/settings/ics")
-async def update_ics_settings(input: ICSSettingsUpdate, request: Request, auth=Depends(require_admin)):
+async def update_ics_settings(input: ICSSettingsUpdate, request: Request, auth=Depends(require_any_role)):
     """ICS-Einstellungen aktualisieren (nur Admin)"""
     update_data = {k: v for k, v in input.model_dump().items() if v is not None}
     

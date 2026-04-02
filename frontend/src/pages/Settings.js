@@ -217,7 +217,7 @@ const Settings = () => {
                 <PermRow label="Strafen-Badge sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <PermRow label="Strafbetrag sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <PermRow label="Termine erstellen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <PermRow label="RSVP abgeben" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <PermRow label="Zu-/Absage" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
                 <PermRow label="Rückmeldungen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
 
                 <PermRow section label="Strafen" />
@@ -227,7 +227,7 @@ const Settings = () => {
 
                 <PermRow section label="Einstellungen - Details" />
                 <PermRow label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
-                <PermRow label="ICS-Kalender" admin="yes" spiess="no" vorstand="no" mitglied="no" />
+                <PermRow label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <PermRow label="Benutzerrollen (Ansicht)" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
               </tbody>
             </table>

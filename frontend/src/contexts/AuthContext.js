@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
   const canSeeAdvancedStats = ['admin', 'spiess', 'vorstand'].includes(role);
   const canSeeAllFines = ['admin', 'spiess'].includes(role);
   const canSeeFineInfo = ['admin', 'spiess', 'vorstand'].includes(role);
-  const canManageICS = isAdmin;
+  const canManageICS = ['admin', 'spiess', 'vorstand'].includes(role);
   const canManageRoles = isAdmin;
 
   return (
