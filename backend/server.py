@@ -1343,7 +1343,7 @@ async def get_fiscal_years(auth=Depends(verify_token)):
 async def get_audit_logs(
     limit: int = 100,
     action: Optional[str] = None,
-    auth=Depends(require_admin)
+    auth=Depends(require_any_role)
 ):
     query = {}
     if action:

@@ -61,7 +61,7 @@ function App() {
               <Route path="roles" element={<ManagementRoute><Roles /></ManagementRoute>} />
               <Route path="fine-types" element={<ManagementRoute><FineTypes /></ManagementRoute>} />
               <Route path="users" element={<Navigate to="/members" replace />} />
-              <Route path="audit" element={<AdminRoute><AuditLogs /></AdminRoute>} />
+              <Route path="audit" element={<ManagementRoute><AuditLogs /></ManagementRoute>} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<RoleBasedRedirect />} />
