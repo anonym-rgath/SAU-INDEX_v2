@@ -211,7 +211,7 @@ const Settings = () => {
 
                 <PermRow section label="Verwaltung" />
                 <PermRow label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
-                <PermRow label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
+                <PermRow label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <PermRow label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <PermRow label="Audit-Log" admin="full" spiess="none" vorstand="none" mitglied="none" />
 

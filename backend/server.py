@@ -957,7 +957,7 @@ class MemberAccessRequest(BaseModel):
     role: UserRole
 
 @api_router.post("/members/{member_id}/access")
-async def enable_member_access(member_id: str, data: MemberAccessRequest, request: Request, auth=Depends(require_admin_or_spiess)):
+async def enable_member_access(member_id: str, data: MemberAccessRequest, request: Request, auth=Depends(require_any_role)):
     """App-Zugang für ein Mitglied aktivieren (User erstellen)"""
     member = await db.members.find_one({"id": member_id}, {"_id": 0})
     if not member:
@@ -1001,7 +1001,7 @@ async def enable_member_access(member_id: str, data: MemberAccessRequest, reques
     return {"message": "App-Zugang aktiviert", "user_id": user_id}
 
 @api_router.delete("/members/{member_id}/access")
-async def disable_member_access(member_id: str, request: Request, auth=Depends(require_admin_or_spiess)):
+async def disable_member_access(member_id: str, request: Request, auth=Depends(require_any_role)):
     """App-Zugang für ein Mitglied deaktivieren (User löschen)"""
     user = await db.users.find_one({"member_id": member_id}, {"_id": 0})
     if not user:
@@ -1025,7 +1025,7 @@ class MemberAccessUpdateRequest(BaseModel):
     password: Optional[str] = None
 
 @api_router.put("/members/{member_id}/access")
-async def update_member_access(member_id: str, data: MemberAccessUpdateRequest, request: Request, auth=Depends(require_admin_or_spiess)):
+async def update_member_access(member_id: str, data: MemberAccessUpdateRequest, request: Request, auth=Depends(require_any_role)):
     """App-Zugang eines Mitglieds aktualisieren"""
     user = await db.users.find_one({"member_id": member_id}, {"_id": 0})
     if not user:

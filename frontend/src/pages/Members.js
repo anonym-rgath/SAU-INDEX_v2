@@ -44,7 +44,7 @@ const ROLE_LABELS = {
 
 const Members = () => {
   const { canManageMembers, isAdmin, isSpiess } = useAuth();
-  const canManageAccess = isAdmin || isSpiess;
+  const canManageAccess = isAdmin || isSpiess || isVorstand;
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
