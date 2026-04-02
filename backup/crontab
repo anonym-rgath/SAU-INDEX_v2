@@ -1,0 +1,9 @@
+# Täglich 02:00 Uhr
+0 2 * * * /usr/local/bin/backup.sh daily >> /var/log/backup.log 2>&1
+
+# Wöchentlich Sonntag 06:00 Uhr
+0 6 * * 0 /usr/local/bin/backup.sh weekly >> /var/log/backup.log 2>&1
+
+# Monatlich letzter Tag 23:00 Uhr
+0 23 28-31 * * [ "$(date -d tomorrow +\%d)" = "01" ] && /usr/local/bin/backup.sh monthly >> /var/log/backup.log 2>&1
+

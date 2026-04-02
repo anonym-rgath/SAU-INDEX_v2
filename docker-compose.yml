@@ -60,6 +60,25 @@ services:
       - "traefik.http.services.rheinzel.loadbalancer.server.port=80"
       - "traefik.docker.network=traefik-network"
 
+  # Automatische Datenbank-Backups
+  backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    container_name: sau-index_backup
+    restart: unless-stopped
+    environment:
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - DB_NAME=rheinzelmaenner
+    volumes:
+      - /mnt/backups/mongodb:/backups
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - rheinzel-network
+
 volumes:
   mongodb_data:
 
