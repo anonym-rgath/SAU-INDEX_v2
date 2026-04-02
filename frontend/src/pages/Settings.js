@@ -27,6 +27,46 @@ const SettingsSection = ({ icon: Icon, title, description, children }) => (
   </div>
 );
 
+const permIcon = (level) => {
+  switch (level) {
+    case 'full': return <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-5 text-center">V</span>;
+    case 'yes': return <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-5 text-center">V</span>;
+    case 'personal': return <span className="inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-5 text-center">P</span>;
+    case 'own': return <span className="inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-5 text-center">E</span>;
+    case 'read': return <span className="inline-block w-5 h-5 rounded-full bg-stone-400 text-white text-[10px] font-bold leading-5 text-center">L</span>;
+    case 'limited': return <span className="inline-block w-5 h-5 rounded-full bg-stone-400 text-white text-[10px] font-bold leading-5 text-center">T</span>;
+    case 'anon': return <span className="inline-block w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-5 text-center">A</span>;
+    case 'none': return <span className="inline-block w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 text-[10px] font-bold leading-5 text-center">&ndash;</span>;
+    case 'no': return <span className="inline-block w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 text-[10px] font-bold leading-5 text-center">&ndash;</span>;
+    default: return null;
+  }
+};
+
+const permLabel = { full: 'Vollzugriff', yes: 'Ja', personal: 'Persönlich', own: 'Eigene', read: 'Lesen', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Nein' };
+
+const PermRow = ({ label, admin, spiess, vorstand, mitglied, section }) => {
+  if (section) {
+    return (
+      <tr className="bg-stone-50 dark:bg-stone-800/50">
+        <td colSpan={5} className="p-2 font-bold text-stone-700 dark:text-stone-300 text-xs tracking-wide uppercase">{label}</td>
+      </tr>
+    );
+  }
+  return (
+    <tr className="hover:bg-stone-50 dark:hover:bg-stone-800/30 transition-colors">
+      <td className="p-2.5 text-stone-700 dark:text-stone-300 font-medium">{label}</td>
+      {[admin, spiess, vorstand, mitglied].map((level, i) => (
+        <td key={i} className="text-center p-2.5">
+          <div className="flex flex-col items-center gap-0.5">
+            {permIcon(level)}
+            <span className="text-[9px] text-stone-400 dark:text-stone-500 leading-none">{permLabel[level]}</span>
+          </div>
+        </td>
+      ))}
+    </tr>
+  );
+};
+
 const Settings = () => {
   const { darkMode, toggleDarkMode } = useTheme();
   const { canManageICS } = useAuth();
@@ -143,7 +183,56 @@ const Settings = () => {
             </div>
           ))}
         </div>
-        <p className="text-xs text-stone-400 dark:text-stone-500">Rollen werden über die Benutzerverwaltung zugewiesen.</p>
+        <p className="text-xs text-stone-400 dark:text-stone-500 mb-2">Rollen werden über die Benutzerverwaltung zugewiesen.</p>
+
+        {/* Berechtigungsmatrix */}
+        <div className="mt-2 -ml-[52px] pl-0">
+          <h3 className="font-semibold text-stone-900 dark:text-stone-100 text-sm mb-3 ml-[52px]">Berechtigungsmatrix</h3>
+          <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-700">
+            <table className="w-full text-xs" data-testid="permissions-matrix">
+              <thead>
+                <tr className="bg-stone-100 dark:bg-stone-800">
+                  <th className="text-left p-2.5 font-semibold text-stone-700 dark:text-stone-300 min-w-[180px]">Bereich / Funktion</th>
+                  <th className="text-center p-2.5 font-semibold text-red-700 dark:text-red-400 w-20">Admin</th>
+                  <th className="text-center p-2.5 font-semibold text-amber-700 dark:text-amber-400 w-20">Spieß</th>
+                  <th className="text-center p-2.5 font-semibold text-blue-700 dark:text-blue-400 w-20">Vorstand</th>
+                  <th className="text-center p-2.5 font-semibold text-emerald-700 dark:text-emerald-400 w-20">Mitglied</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
+                <PermRow section label="Seiten" />
+                <PermRow label="Dashboard" admin="full" spiess="full" vorstand="full" mitglied="personal" />
+                <PermRow label="Termine" admin="full" spiess="full" vorstand="full" mitglied="read" />
+                <PermRow label="Strafenübersicht" admin="full" spiess="full" vorstand="own" mitglied="own" />
+                <PermRow label="Statistiken" admin="personal" spiess="personal" vorstand="personal" mitglied="personal" />
+                <PermRow label="Statistiken (Erweitert)" admin="full" spiess="full" vorstand="anon" mitglied="none" />
+                <PermRow label="Einstellungen" admin="full" spiess="limited" vorstand="limited" mitglied="limited" />
+
+                <PermRow section label="Verwaltung" />
+                <PermRow label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <PermRow label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <PermRow label="Audit-Log" admin="full" spiess="none" vorstand="none" mitglied="none" />
+
+                <PermRow section label="Termine - Details" />
+                <PermRow label="Strafen-Badge sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <PermRow label="Strafbetrag sichtbar" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <PermRow label="Termine erstellen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <PermRow label="RSVP abgeben" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <PermRow label="Rückmeldungen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+
+                <PermRow section label="Strafen" />
+                <PermRow label="Alle Strafen einsehen" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
+                <PermRow label="Eigene Strafen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <PermRow label="Strafen erstellen" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
+
+                <PermRow section label="Einstellungen - Details" />
+                <PermRow label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+                <PermRow label="ICS-Kalender" admin="yes" spiess="no" vorstand="no" mitglied="no" />
+                <PermRow label="Benutzerrollen (Ansicht)" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
+              </tbody>
+            </table>
+          </div>
+        </div>
       </SettingsSection>
     </div>
   );
