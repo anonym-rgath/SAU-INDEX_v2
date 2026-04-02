@@ -16,7 +16,7 @@ const permIcon = (level) => {
   }
 };
 
-const permLabel = { full: 'Vollzugriff', yes: 'Ja', personal: 'Persönlich', own: 'Eigene', read: 'Lesen', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Nein' };
+const permLabel = { full: 'Vollzugriff', yes: 'Vollzugriff', personal: 'Persönlich', own: 'Eigene', read: 'Lesen', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Nein' };
 
 const Section = ({ label }) => (
   <tr className="bg-stone-50 dark:bg-stone-800/50">
