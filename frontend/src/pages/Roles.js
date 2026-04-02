@@ -137,6 +137,17 @@ const Roles = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Legende */}
+          <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs text-stone-500 dark:text-stone-400">
+            <div className="flex items-center gap-1.5">{permIcon('full')} <span>Vollzugriff</span></div>
+            <div className="flex items-center gap-1.5">{permIcon('personal')} <span>Persönlich</span></div>
+            <div className="flex items-center gap-1.5">{permIcon('own')} <span>Eigene</span></div>
+            <div className="flex items-center gap-1.5">{permIcon('read')} <span>Lesen</span></div>
+            <div className="flex items-center gap-1.5">{permIcon('limited')} <span>Teilweise</span></div>
+            <div className="flex items-center gap-1.5">{permIcon('anon')} <span>Anonymisiert</span></div>
+            <div className="flex items-center gap-1.5">{permIcon('none')} <span>Kein Zugriff</span></div>
+          </div>
         </div>
       </div>
     </div>
