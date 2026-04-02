@@ -1,6 +1,6 @@
 # Rheinzelmänner - Docker Deployment Guide
 
-Detaillierte Anleitung zur Installation auf einem Raspberry Pi 4.
+Detaillierte Anleitung zur Installation und Betrieb auf einem Raspberry Pi 4.
 
 ---
 
@@ -10,47 +10,25 @@ Detaillierte Anleitung zur Installation auf einem Raspberry Pi 4.
 |------------|-------------|
 | Hardware | Raspberry Pi 4 (2GB+) oder Raspberry Pi 5 |
 | Betriebssystem | Raspberry Pi OS 64-bit (Bookworm empfohlen) |
-| Speicher | Min. 16GB SD-Karte |
+| System-Speicher | Min. 16GB SD-Karte |
+| Backup-Speicher | SSD an USB 3.0 (empfohlen), gemountet auf `/mnt/backups` |
 | Netzwerk | LAN oder WLAN |
 
-> **Wichtig:** Raspberry Pi 3 und ältere 32-bit Modelle werden **nicht unterstützt** (MongoDB benötigt ARMv8.2-A, Pi 4 hat ARMv8.0 - funktioniert nur mit MongoDB 4.4.18).
+> **Wichtig:** Raspberry Pi 3 und ältere 32-bit Modelle werden **nicht unterstützt** (MongoDB benötigt ARMv8.2-A, Pi 4 hat ARMv8.0 — funktioniert nur mit MongoDB 4.4.18).
 
 ---
 
-## Architektur
+## Services-Übersicht
 
-```
-                    +------------------+
-                    |     Browser      |
-                    +--------+---------+
-                             |
-                    Port 443 (HTTPS)
-                    Port 80 -> 301 Redirect
-                             |
-              +--------------v--------------+
-              |   Frontend Container        |
-              |   (React + Nginx + SSL)     |
-              |   - Statische Dateien       |
-              |   - /api/* -> Backend       |
-              |   - HTTP -> HTTPS Redirect  |
-              +--------------+--------------+
-                             |
-                      intern Port 8001
-                             |
-              +--------------v--------------+
-              |   Backend Container         |
-              |   (FastAPI + Python 3.11)   |
-              +--------------+--------------+
-                             |
-                      intern Port 27017
-                             |
-              +--------------v--------------+
-              |   MongoDB 4.4.18            |
-              |   (Datenbank)               |
-              +-----------------------------+
-```
+Die Anwendung besteht aus **4 Docker-Containern** (+ optionalem Traefik):
 
-> **HTTPS:** Die App verwendet standardmäßig HTTPS mit selbstsignierten Zertifikaten. HTTP-Anfragen werden automatisch auf HTTPS weitergeleitet.
+| Service | Container | Image | Funktion |
+|---------|-----------|-------|----------|
+| MongoDB | `rheinzel-mongodb` | `mongo:4.4.18` | Datenbank |
+| Backend | `rheinzel-backend` | Python 3.11 (Custom Build) | FastAPI API-Server |
+| Frontend | `rheinzel-frontend` | Node 20 + Nginx (Custom Build) | React SPA + Reverse Proxy |
+| Backup | `sau-index_backup` | Mongo 4.4 + Cron (Custom Build) | Automatische DB-Sicherungen |
+| Traefik | `traefik` | `traefik:v3.3` | Reverse Proxy (optional) |
 
 ---
 
@@ -81,16 +59,34 @@ docker --version
 docker compose version
 ```
 
-### 2. Projekt herunterladen
+### 2. SSD einrichten (für Backups)
 
-**Option A - Git Clone:**
+```bash
+# SSD identifizieren
+lsblk
+
+# Partition mounten (z.B. /dev/sda2)
+sudo mkdir -p /mnt/backups
+sudo mount /dev/sda2 /mnt/backups
+
+# Permanenten Mount in fstab eintragen
+echo '/dev/sda2 /mnt/backups ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+
+# Backup-Verzeichnis erstellen
+sudo mkdir -p /mnt/backups/mongodb
+sudo chown -R $USER:$USER /mnt/backups/mongodb
+```
+
+### 3. Projekt herunterladen
+
+**Option A — Git Clone:**
 ```bash
 cd ~
 git clone https://github.com/DEIN_USERNAME/rheinzelmaenner.git
 cd rheinzelmaenner
 ```
 
-**Option B - ZIP-Datei:**
+**Option B — ZIP-Datei:**
 ```bash
 # Auf dem PC: ZIP auf Pi kopieren
 scp rheinzelmaenner.zip pi@RASPBERRY_IP:/home/pi/
@@ -101,9 +97,9 @@ unzip rheinzelmaenner.zip
 cd rheinzelmaenner
 ```
 
-### 3. Konfiguration (optional)
+### 4. Konfiguration
 
-Die `.env` Datei wird beim ersten Start automatisch erstellt. Sie können sie vorher anpassen:
+Die `.env` Datei wird beim ersten Start automatisch erstellt. Du kannst sie vorher anpassen:
 
 ```bash
 cp .env.example .env
@@ -112,9 +108,6 @@ nano .env
 
 Inhalt:
 ```env
-# Port (Standard: 80)
-APP_PORT=80
-
 # JWT Secret - UNBEDINGT ÄNDERN!
 # Generieren mit: openssl rand -hex 32
 JWT_SECRET=ihr-geheimer-schluessel-hier
@@ -123,37 +116,43 @@ JWT_SECRET=ihr-geheimer-schluessel-hier
 ADMIN_PASSWORD=admin123
 ```
 
-### 4. App starten
+### 5. Traefik-Netzwerk erstellen
+
+```bash
+docker network create traefik-network
+```
+
+> Nur nötig im Traefik-Modus (`docker-compose.yml`). Für Standalone entfällt dieser Schritt.
+
+### 6. App starten
 
 ```bash
 # Scripts ausführbar machen
 chmod +x start.sh stop.sh logs.sh
 
-# App starten
-./start.sh
+# App starten (Traefik-Modus)
+docker compose up -d --build
 ```
 
 **Erster Start dauert 5-10 Minuten** (Docker Images werden gebaut).
+
+> **Standalone-Modus** (ohne Traefik, direkt auf Port 80/443):
+> ```bash
+> docker compose -f docker-compose.standalone.yml up -d --build
+> ```
 
 ---
 
 ## Zugriff
 
-Nach erfolgreichem Start:
+| Modus | URL |
+|-------|-----|
+| Extern (Cloudflare Tunnel) | `https://rhnzl.sau-index.de` |
+| Lokal (LAN) | `http://<PI-IP>` (über Traefik auf Port 80) |
 
-1. **IP-Adresse ermitteln:**
-   ```bash
-   hostname -I
-   ```
-
-2. **Browser öffnen:**
-   ```
-   http://192.168.x.x
-   ```
-
-3. **Anmelden:**
-   - Benutzer: `admin`
-   - Passwort: `admin123` (oder wie in `.env` konfiguriert)
+**Login-Daten:**
+- Benutzer: `admin`
+- Passwort: `admin123` (oder wie in `.env` konfiguriert)
 
 ---
 
@@ -161,97 +160,95 @@ Nach erfolgreichem Start:
 
 | Befehl | Beschreibung |
 |--------|--------------|
-| `./start.sh` | App starten (baut bei Bedarf) |
-| `./stop.sh` | App stoppen |
-| `./logs.sh` | Logs aller Services anzeigen |
+| `docker compose up -d --build` | App starten/aktualisieren |
+| `docker compose down` | App stoppen |
 | `docker compose ps` | Status aller Container |
-| `docker compose restart backend` | Backend neustarten |
+| `docker compose logs -f` | Live-Logs aller Services |
 | `docker compose logs backend` | Nur Backend-Logs |
-| `docker compose down -v` | Alles löschen inkl. Datenbank |
+| `docker compose restart backend` | Backend neustarten |
+| `docker compose down -v` | Alles löschen **inkl. Datenbank** |
 
 ---
 
-## Troubleshooting
+## Automatische Backups
 
-### Container starten nicht
+### Funktionsweise
+
+Der `sau-index_backup` Container führt per Cron automatisch `mongodump` aus und speichert komprimierte Backups (`.gz`) auf die SSD.
+
+### Zeitplan
+
+| Typ | Cron-Ausdruck | Zeitpunkt | Aufbewahrung |
+|-----|---------------|-----------|-------------|
+| Täglich | `0 2 * * *` | Jeden Tag, 02:00 Uhr | 7 Tage |
+| Wöchentlich | `0 6 * * 0` | Sonntag, 06:00 Uhr | 28 Tage |
+| Monatlich | `0 23 28-31 * *` | Letzter Tag, 23:00 Uhr | 180 Tage |
+
+### Speicherstruktur
+
+```
+/mnt/backups/mongodb/
+├── daily/
+│   ├── backup_2026-02-15_02-00.gz
+│   ├── backup_2026-02-14_02-00.gz
+│   └── ...
+├── weekly/
+│   └── backup_2026-02-09_06-00.gz
+└── monthly/
+    └── backup_2026-01-31_23-00.gz
+```
+
+### Backup-Logs prüfen
 
 ```bash
-# Logs prüfen
-docker compose logs
-
-# Speziell MongoDB
-docker compose logs mongodb
-
-# Speziell Backend
-docker compose logs backend
+docker logs sau-index_backup --tail 50
 ```
 
-### MongoDB-Fehler: "requires ARMv8.2-A"
-
-Sie verwenden eine falsche MongoDB-Version. Stellen Sie sicher, dass in `docker-compose.yml` steht:
-```yaml
-mongodb:
-  image: mongo:4.4.18
-```
-
-### Port 80 belegt
+### Manuelles Backup
 
 ```bash
-# Prüfen was Port 80 nutzt
-sudo lsof -i :80
-
-# Apache deaktivieren (falls installiert)
-sudo systemctl stop apache2
-sudo systemctl disable apache2
-
-# Oder anderen Port nutzen in .env:
-APP_PORT=8080
+docker exec sau-index_backup /usr/local/bin/backup.sh daily
 ```
 
-### Login funktioniert nicht
+### Datenbank wiederherstellen
 
-1. Prüfen Sie die Backend-Logs:
+```bash
+# Aus täglichem Backup
+docker exec -i rheinzel-mongodb mongorestore \
+  --archive --gzip --drop \
+  < /mnt/backups/mongodb/daily/backup_2026-02-15_02-00.gz
+```
+
+> **`--drop`** löscht bestehende Collections vor dem Restore. Ohne diesen Parameter werden Daten zusammengeführt.
+
+---
+
+## Cloudflare Tunnel
+
+Der externe Zugriff läuft über einen Cloudflare Tunnel (`cloudflared`), der separat konfiguriert wird.
+
+### Einrichtung
+
+1. Im **Cloudflare Dashboard** (Zero Trust → Networks → Tunnels) einen Tunnel erstellen
+2. `cloudflared` auf dem Pi installieren und mit Token starten:
    ```bash
-   docker compose logs backend | grep -i error
+   docker run -d --name cloudflared --restart unless-stopped \
+     cloudflare/cloudflared:latest tunnel --no-autoupdate run \
+     --token <DEIN-TUNNEL-TOKEN>
    ```
+3. Public Hostname konfigurieren:
 
-2. Admin-Benutzer wird beim Start automatisch erstellt. Falls Probleme:
-   ```bash
-   # Datenbank zurücksetzen
-   docker compose down -v
-   ./start.sh
-   ```
+   | Public Hostname | Service |
+   |----------------|---------|
+   | `rhnzl.sau-index.de` | `http://localhost:80` |
 
-### Zu wenig Speicher
-
-```bash
-# Speicher prüfen
-free -h
-
-# Swap erhöhen
-sudo dphys-swapfile swapoff
-sudo nano /etc/dphys-swapfile
-# CONF_SWAPSIZE=2048 setzen
-sudo dphys-swapfile setup
-sudo dphys-swapfile swapon
-```
-
-### Container neustarten sich ständig
-
-```bash
-# Ressourcen prüfen
-docker stats
-
-# Einzelnen Container-Log prüfen
-docker logs rheinzel-backend --tail 100
-```
+> **Wichtig:** Der Tunnel verbindet sich per HTTP zum lokalen Traefik. Cloudflare übernimmt die TLS-Terminierung. **Kein** HTTP→HTTPS-Redirect in Nginx konfigurieren — das verursacht eine Endlos-Umleitung.
 
 ---
 
 ## Autostart beim Booten
 
 ```bash
-# Systemd Service erstellen
 sudo nano /etc/systemd/system/rheinzelmaenner.service
 ```
 
@@ -282,34 +279,11 @@ sudo systemctl enable rheinzelmaenner.service
 
 ---
 
-## Backup
-
-### Datenbank sichern
-
-```bash
-# Backup erstellen
-docker exec rheinzel-mongodb mongodump --out /data/backup
-
-# Auf Host kopieren
-docker cp rheinzel-mongodb:/data/backup ./backup_$(date +%Y%m%d)
-```
-
-### Datenbank wiederherstellen
-
-```bash
-# Backup in Container kopieren
-docker cp ./backup_20241215 rheinzel-mongodb:/data/backup
-
-# Wiederherstellen
-docker exec rheinzel-mongodb mongorestore /data/backup
-```
-
----
-
 ## Updates
 
 ```bash
-# Bei Git Clone
+# Code aktualisieren
+cd ~/rheinzelmaenner
 git pull
 
 # Neu bauen und starten
@@ -318,39 +292,110 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
+> **Tipp bei wenig Speicher:** Alte Docker-Images und Caches vorher aufräumen:
+> ```bash
+> docker system prune -a --volumes
+> ```
+
 ---
 
-## Sicherheitshinweise
+## Troubleshooting
 
-1. **JWT_SECRET ändern** - Nutzen Sie einen zufälligen 32+ Zeichen String
-2. **Admin-Passwort ändern** - Nach dem ersten Login
-3. **Firewall** - App ist nur im lokalen Netzwerk erreichbar
-4. **Updates** - Regelmäßig `git pull` und neu deployen
+### Container starten nicht
+
+```bash
+# Alle Logs prüfen
+docker compose logs
+
+# Speziell MongoDB
+docker compose logs mongodb
+
+# Speziell Backend
+docker compose logs backend
+```
+
+### MongoDB-Fehler: "requires ARMv8.2-A"
+
+Falsche MongoDB-Version. In `docker-compose.yml` muss stehen:
+```yaml
+mongodb:
+  image: mongo:4.4.18
+```
+
+### Kein Speicher auf SD-Karte
+
+```bash
+# Speicher prüfen
+df -h
+
+# Docker aufräumen
+docker system prune -a --volumes
+
+# Swap erhöhen falls nötig
+sudo dphys-swapfile swapoff
+sudo nano /etc/dphys-swapfile  # CONF_SWAPSIZE=2048
+sudo dphys-swapfile setup
+sudo dphys-swapfile swapon
+```
+
+### Login funktioniert nicht
+
+```bash
+# Backend-Logs prüfen
+docker compose logs backend | grep -i error
+
+# Bei Brute-Force-Sperre: Locks in DB löschen
+docker exec rheinzel-mongodb mongo rheinzelmaenner \
+  --eval "db.login_attempts.deleteMany({}); db.account_lockouts.deleteMany({})"
+```
+
+### Backup-Container läuft nicht
+
+```bash
+# Status prüfen
+docker compose ps backup
+
+# Logs prüfen
+docker logs sau-index_backup --tail 20
+
+# SSD gemountet?
+mount | grep /mnt/backups
+```
+
+### Port 80 belegt
+
+```bash
+# Prüfen was Port 80 nutzt
+sudo lsof -i :80
+
+# Apache deaktivieren (falls installiert)
+sudo systemctl stop apache2
+sudo systemctl disable apache2
+```
 
 ---
 
 ## Technische Details
 
-| Service | Image | Port (intern) |
-|---------|-------|---------------|
-| Frontend | node:20-alpine + nginx:alpine | 80 |
+| Service | Base Image | Interner Port |
+|---------|-----------|---------------|
+| Frontend | node:20-alpine → nginx:alpine | 80 |
 | Backend | python:3.11-slim | 8001 |
 | MongoDB | mongo:4.4.18 | 27017 |
+| Backup | mongo:4.4.18 + cron | — |
 
 ### Warum MongoDB 4.4.18?
 
 Der Raspberry Pi 4 verwendet einen ARM Cortex-A72 Prozessor (ARMv8.0-A). MongoDB 5.0+ benötigt ARMv8.2-A Features, die der Pi 4 nicht hat. MongoDB 4.4.18 ist die letzte kompatible Version.
 
-### Dateien
+### Environment-Variablen
 
-| Datei | Beschreibung |
-|-------|--------------|
-| `docker-compose.yml` | Service-Definitionen |
-| `backend/Dockerfile` | Backend Image |
-| `backend/requirements.prod.txt` | Python Dependencies |
-| `backend/server.py` | API Server |
-| `frontend/Dockerfile` | Frontend Image |
-| `frontend/nginx.conf` | Nginx Reverse Proxy |
-| `start.sh` | Start-Script |
-| `stop.sh` | Stop-Script |
-| `logs.sh` | Log-Viewer |
+| Variable | Standard | Beschreibung |
+|----------|----------|-------------|
+| `JWT_SECRET` | Auto-generiert | JWT-Signatur-Schlüssel |
+| `ADMIN_PASSWORD` | `admin123` | Initiales Admin-Passwort |
+| `MONGO_URL` | `mongodb://mongodb:27017` | MongoDB Connection String |
+| `DB_NAME` | `rheinzelmaenner` | Datenbank-Name |
+| `CORS_ORIGINS` | `*` | Erlaubte Origins |
+| `MONGO_HOST` | `mongodb` | Backup: MongoDB Host |
+| `MONGO_PORT` | `27017` | Backup: MongoDB Port |

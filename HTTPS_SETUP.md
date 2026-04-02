@@ -1,10 +1,36 @@
-# HTTPS Setup mit Cloudflare Origin Certificate
+# HTTPS Setup mit Cloudflare
 
-Die Rheinzelmänner-App verwendet ein Cloudflare Origin Certificate für die Domain **sau-index.de**.
+Die Rheinzelmänner-App verwendet **Cloudflare Tunnels** für den externen HTTPS-Zugriff. Optional kann ein **Cloudflare Origin Certificate** für den Standalone-Modus genutzt werden.
 
 ---
 
-## Zertifikat-Info
+## Aktuelle Konfiguration: Cloudflare Tunnel (empfohlen)
+
+Im Traefik-Modus (Standard) übernimmt der Cloudflare Tunnel die komplette TLS-Terminierung:
+
+```
+Browser (HTTPS) → Cloudflare Edge → Tunnel → Traefik (HTTP:80) → Nginx → Backend
+```
+
+### Vorteile
+- Kein SSL-Zertifikat auf dem Pi nötig
+- Automatische Zertifikatsverwaltung durch Cloudflare
+- DDoS-Schutz inklusive
+- Kein offener Port am Router nötig
+
+### Einrichtung
+
+Siehe [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md#cloudflare-tunnel) für die Tunnel-Konfiguration.
+
+> **Wichtig:** Im Traefik-Modus darf Nginx **kein** HTTP→HTTPS-Redirect enthalten. Der Tunnel verbindet sich per HTTP. Ein Redirect verursacht eine Endlos-Umleitung.
+
+---
+
+## Alternative: Origin Certificate (Standalone-Modus)
+
+Für den Standalone-Betrieb (`docker-compose.standalone.yml`) kann ein Cloudflare Origin Certificate verwendet werden.
+
+### Zertifikat-Info
 
 | Eigenschaft | Wert |
 |-------------|------|
@@ -13,13 +39,7 @@ Die Rheinzelmänner-App verwendet ein Cloudflare Origin Certificate für die Dom
 | Gültig bis | 15. Februar 2041 |
 | Typ | Origin Certificate |
 
----
-
-## Setup (bereits konfiguriert)
-
 ### Zertifikat-Dateien
-
-Die Zertifikate befinden sich im `certs/` Ordner:
 
 ```
 certs/
@@ -27,9 +47,7 @@ certs/
 └── sau-index.de.key   # Privater Schlüssel
 ```
 
-### Nginx-Konfiguration
-
-Die Nginx-Konfiguration (`frontend/nginx.ssl.conf`) ist bereits für sau-index.de konfiguriert:
+### Nginx-Konfiguration (nginx.ssl.conf)
 
 ```nginx
 server {
@@ -43,76 +61,35 @@ server {
 }
 ```
 
----
-
-## Deployment
-
-### 1. Zertifikate kopieren
-
-Stelle sicher, dass die Zertifikat-Dateien im `certs/` Ordner vorhanden sind:
+### Standalone starten
 
 ```bash
-ls -la certs/
-# Erwartet:
-# sau-index.de.crt
-# sau-index.de.key
+docker compose -f docker-compose.standalone.yml up -d --build
 ```
 
-### 2. Starten
-
-```bash
-./start.sh
-```
-
-### 3. Zugriff
-
-Die App ist erreichbar unter:
-
-```
-https://sau-index.de
-```
-
----
-
-## Cloudflare DNS-Einstellungen
-
-Damit die Domain korrekt funktioniert, müssen in Cloudflare folgende Einstellungen vorgenommen werden:
-
-### DNS-Eintrag
+### Cloudflare DNS-Einstellungen (für Standalone)
 
 | Typ | Name | Inhalt | Proxy |
 |-----|------|--------|-------|
 | A | sau-index.de | [IP des Raspberry Pi] | Proxied (orange Wolke) |
 
-### SSL/TLS-Modus
-
-In Cloudflare Dashboard → SSL/TLS:
-
-- **SSL/TLS encryption mode:** Full (strict)
-
-Dies ist wichtig, da wir ein Origin Certificate verwenden.
+SSL/TLS-Modus in Cloudflare: **Full (strict)**
 
 ---
 
 ## Zertifikat erneuern
 
-Das aktuelle Zertifikat ist bis **2041** gültig. Falls ein neues Zertifikat benötigt wird:
+Das aktuelle Zertifikat ist bis **2041** gültig. Falls ein neues benötigt wird:
 
-1. Neues Origin Certificate in Cloudflare erstellen:
-   - Cloudflare Dashboard → SSL/TLS → Origin Server → Create Certificate
-   
+1. Cloudflare Dashboard → SSL/TLS → Origin Server → Create Certificate
 2. Dateien ersetzen:
    ```bash
-   # Alte Dateien sichern
    mv certs/sau-index.de.crt certs/sau-index.de.crt.backup
    mv certs/sau-index.de.key certs/sau-index.de.key.backup
-   
-   # Neue Dateien speichern (Inhalt aus Cloudflare)
-   nano certs/sau-index.de.crt
-   nano certs/sau-index.de.key
+   nano certs/sau-index.de.crt   # Neuen Inhalt einfügen
+   nano certs/sau-index.de.key   # Neuen Inhalt einfügen
    ```
-
-3. Nginx neu starten:
+3. Nginx neustarten:
    ```bash
    docker compose restart frontend
    ```
@@ -121,28 +98,17 @@ Das aktuelle Zertifikat ist bis **2041** gültig. Falls ein neues Zertifikat ben
 
 ## Troubleshooting
 
+### Endlos-Umleitung ("Zu viele Weiterleitungen")
+- **Ursache:** Nginx enthält einen HTTP→HTTPS-Redirect im Traefik-Modus
+- **Lösung:** `nginx.traefik.conf` verwenden (nur `listen 80`, kein SSL)
+
 ### "SSL certificate problem"
+- Prüfen ob SSL/TLS-Modus in Cloudflare auf "Full (strict)" steht (Standalone)
+- Oder "Full" für Tunnel-Modus
 
-- Prüfen ob der SSL/TLS-Modus in Cloudflare auf "Full (strict)" steht
-- Prüfen ob die Zertifikat-Dateien korrekt sind
-
-### Zertifikat nicht gefunden
-
+### Zertifikat nicht gefunden (Standalone)
 ```bash
-# Prüfen ob Dateien existieren
 ls -la certs/
-
-# Berechtigungen setzen
 chmod 644 certs/sau-index.de.crt
 chmod 600 certs/sau-index.de.key
-```
-
-### Nginx startet nicht
-
-```bash
-# Logs prüfen
-docker compose logs frontend
-
-# Zertifikat validieren
-openssl x509 -in certs/sau-index.de.crt -text -noout
 ```

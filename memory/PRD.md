@@ -11,96 +11,87 @@ Full-stack application for a "Schützenzug" (marksmen's platoon, "Rheinzelmänne
 - Calendar/Event system with RSVP and automatic fine assignment
 - ICS calendar sync from external source
 - Settings page with language, dark mode, ICS config, and roles overview
+- Profile page with avatar upload (Object Storage)
+- Automated database backups to SSD
 - Docker-based deployment on Raspberry Pi 4 with Traefik reverse proxy
+- Complete project documentation
 
 ## Tech Stack
-- Frontend: React, Tailwind CSS, Shadcn/UI, Recharts
-- Backend: Python, FastAPI, Pydantic, icalendar
+- Frontend: React 19, Tailwind CSS (Dark Mode), Shadcn/UI, Recharts
+- Backend: Python, FastAPI, Pydantic, icalendar, slowapi
 - Database: MongoDB (4.4.18)
-- Deployment: Docker, Raspberry Pi 4 (ARM64), Traefik, Cloudflare Tunnels
-
-## Architecture
-```
-/app/
-├── backend/
-│   ├── server.py              // Monolith (~2000 lines)
-│   └── tests/
-├── docker-compose.yml         // Traefik-ready
-├── frontend/
-│   ├── nginx.traefik.conf
-│   └── src/
-│       ├── components/        // TopBar.js, EventDialog.js, EventDetailDialog.js
-│       ├── contexts/          // AuthContext.js (permissions), ThemeContext.js (dark mode)
-│       ├── pages/             // Members.js, Calendar.js, Dashboard.js, Settings.js, Statistics.js, StatisticsAdvanced.js
-│       └── lib/api.js
-├── traefik/
-└── README.md
-```
+- Deployment: Docker, Raspberry Pi 4 (ARM64), Traefik v3.3, Cloudflare Tunnels
+- Storage: Emergent Object Storage (Avatars)
+- Backups: Cron + mongodump (Daily/Weekly/Monthly → SSD)
 
 ## Role-Based Access Control (RBAC)
 
 | Feature | Admin | Spieß | Vorstand | Mitglied |
 |---|---|---|---|---|
-| Dashboard | Full | Full | Full | Personal |
-| Termine | + Fine info | + Fine info | + Fine info | No fine info |
-| Strafenübersicht | All fines | All fines | Own fines | Own fines |
-| Statistiken | Personal | Personal | Personal | Personal |
-| Statistiken (Erweitert) | Full | Full | Anonymized | No access |
-| Benutzerverwaltung | Yes | Yes | Yes | No |
-| Strafenarten | Yes | Yes | Yes | No |
-| Audit-Log | Yes | No | No | No |
-| Einstellungen (ICS) | Yes | No | No | No |
-| Einstellungen (other) | Yes | Yes | Yes | Yes |
-| Benutzerrollen (view) | Yes | Yes | Yes | Yes |
+| Dashboard (Persönlich) | Ja* | Ja* | Ja* | Ja |
+| Dashboard (Vereinsübersicht) | Ja | Ja | - | - |
+| Termine | CRUD + Strafen | CRUD + Strafen | CRUD + Strafen | Nur Lesen |
+| Strafenübersicht | Alle | Alle | Nur eigene | Nur eigene |
+| Statistiken (Erweitert) | Voll | Voll | Anonymisiert | - |
+| Mitgliederverwaltung | CRUD | CRUD | CRUD | - |
+| Strafenarten | CRUD | CRUD | CRUD | - |
+| Benutzerverwaltung | Voll | - | - | - |
+| Audit-Log | Ja | Ja | Ja | - |
+| Benutzerrollen | Ja | Ja | Ja | - |
+| Profil | Ja | Ja | Ja | Ja |
+| Einstellungen (ICS) | Ja | Ja | Ja | - |
+| Dark Mode | Ja | Ja | Ja | Ja |
 
 ## Completed Features
-- [x] JWT Auth with 4 roles
+- [x] JWT Auth with 4 roles + brute-force protection
 - [x] Unified Member + User management with app-access toggle
 - [x] Auto-disable access on member archival
 - [x] Fine Types CRUD + Event fine type dropdown
 - [x] Fiscal year-based ranking and statistics
-- [x] Calendar/Event CRUD with RSVP
+- [x] Calendar/Event CRUD with RSVP + automatic fine assignment
 - [x] ICS Calendar daily pull-sync
-- [x] Security hardening
-- [x] Traefik reverse proxy + SSD migration
-- [x] Dark Mode (Settings, TopBar, Dashboard, Fines, Members, Statistics)
+- [x] Security hardening (bcrypt 12 rounds, 8h JWT, strict CORS, Nginx headers)
+- [x] Traefik reverse proxy + Cloudflare Tunnel setup
+- [x] Dark Mode across all pages
+- [x] Dashboard split: Personal metrics + Club overview (Top 5 Ranking)
+- [x] Profile page with avatar upload (Object Storage)
+- [x] Benutzerrollen page with permissions matrix
 - [x] Sidebar: Administration group with collapsible items
-- [x] Role-based view restrictions (2026-04-01):
-  - Mitglied: no fine info on events, own fines/stats only, no ICS settings
-  - Vorstand: personal stats + anonymized advanced stats, own fines
-  - Spieß: personal stats + full advanced stats, all fines
-- [x] Statistiken (Erweitert) page with charts
-- [x] Settings page with Benutzerrollen section
+- [x] Automated DB backups (daily/weekly/monthly → SSD)
+- [x] Repository cleanup (removed obsolete files)
+- [x] Complete documentation overhaul (README, DOCKER_DEPLOYMENT, HTTPS_SETUP, TRAEFIK_SETUP)
 
 ## Backlog
 ### P2 - Upcoming
-- [ ] Automatic Database Backup (weekly `mongodump`)
-- [ ] Data Export (CSV/PDF)
-- [ ] Dark Mode: extend to Calendar event cards, FineTypes, AuditLogs pages
+- [ ] Data Export (CSV/PDF for rankings/fines)
 
 ### P2 - Refactoring
-- [ ] Backend: Split `server.py` into APIRouter modules
+- [ ] Backend: Split `server.py` (~2100 lines) into APIRouter modules
 
 ## Key API Endpoints
-- Auth: `POST /api/auth/login`, `POST /api/auth/logout`
+- Auth: `POST /api/auth/login`, `POST /api/auth/logout`, `PUT /api/auth/change-password`
+- Users: `GET/POST/PUT/DELETE /api/users`, `PUT /api/users/{id}/reset-password`
 - Members: `GET/POST/PUT/DELETE /api/members`
 - Member Access: `POST/PUT/DELETE /api/members/{id}/access`
 - Fine Types: `GET/POST/PUT/DELETE /api/fine-types`
-- Fines: `GET/POST/PUT/DELETE /api/fines` (filtered by role)
+- Fines: `GET/POST/PUT/DELETE /api/fines`
 - Events: `GET/POST/PUT/DELETE /api/events`
+- Event RSVP: `POST /api/events/{id}/respond`
 - Event Fine Toggle: `PUT /api/events/{id}/fine-toggle`
-- Statistics: `GET /api/statistics` (admin/spiess/vorstand only)
-- Personal Stats: `GET /api/statistics/personal` (all roles)
-- Settings: `GET/PUT /api/settings/ics` (admin only)
+- Statistics: `GET /api/statistics`, `GET /api/statistics/personal`
+- Profile: `GET/PUT /api/profile`, `POST /api/profile/avatar`
+- Settings: `GET/PUT /api/settings/ics`, `POST /api/settings/ics/sync`
+- Health: `GET /health`
 
 ## Changelog
-- 2026-04-02: Fixed ReferenceError in Members.js - `isVorstand` was not destructured from `useAuth()`, causing Benutzerverwaltung page crash for all roles.
-- 2026-04-02: Removed standalone Statistics page (`/statistics`, admin-only). Merged into single "Statistiken (Erweitert)" menu entry pointing to `/statistics-advanced`.
-- 2026-04-02: Created dedicated Benutzerrollen page (`/roles`) with role descriptions and permissions matrix. Removed from Settings page. Accessible for Admin/Spieß/Vorstand.
-- 2026-04-02: Dashboard redesigned with two sections: Personal (all roles) with Meine Strafen, Strafen nach Art, Verlauf; and Vereinsübersicht (Admin/Spieß only) with Sau, Lämmchen, Ranking Top 5.
-- 2026-04-02: Created Profile page (`/profile`) with avatar (initials + image upload via Object Storage), name editing (updates linked member), and birthday. Accessible for all roles.
-- 2026-04-02: Added automatic DB backup Docker service (sau-index_backup) with daily/weekly/monthly schedule to SSD at /mnt/backups/mongodb.
+- 2026-04-02: Fixed ReferenceError in Members.js
+- 2026-04-02: Removed standalone Statistics page, merged into StatisticsAdvanced
+- 2026-04-02: Created dedicated Benutzerrollen page (/roles)
+- 2026-04-02: Dashboard redesigned: Personal + Vereinsübersicht (Top 5)
+- 2026-04-02: Created Profile page with avatar upload (Object Storage)
+- 2026-04-02: Added automatic DB backup Docker service (sau-index_backup)
+- 2026-04-02: Repository cleanup (removed obsolete files)
+- 2026-04-03: Complete documentation overhaul (README.md, DOCKER_DEPLOYMENT.md, HTTPS_SETUP.md, TRAEFIK_SETUP.md)
 
 ## Credentials
 - Admin: `admin` / `admin123`
-- Vorstand (Test): `robin` / `Vorstand123!`

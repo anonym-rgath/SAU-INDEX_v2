@@ -5,9 +5,9 @@
 Mit Traefik als zentralem Reverse Proxy können mehrere Webanwendungen parallel auf dem Raspberry Pi laufen. Jede App wird über ihre eigene Domain/Subdomain angesprochen.
 
 ```
-Internet → Cloudflare → Tunnel → Traefik (Port 80) → rheinzel-frontend
-                                                    → andere-app
-                                                    → weitere-app
+Internet → Cloudflare Tunnel → Traefik (Port 80) → rheinzel-frontend
+                                                  → andere-app
+                                                  → weitere-app
 ```
 
 ---
@@ -39,7 +39,7 @@ docker compose up -d
 
 ### Dateien im `traefik/`-Ordner:
 
-**`traefik/docker-compose.yml`** - Traefik Container:
+**`traefik/docker-compose.yml`** — Traefik Container:
 ```yaml
 services:
   traefik:
@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"       # HTTP
-      - "8080:8080"   # Dashboard (lokal)
+      - "8080:8080"   # Dashboard (nur lokal)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
@@ -60,7 +60,7 @@ networks:
     external: true
 ```
 
-**`traefik/traefik.yml`** - Traefik Konfiguration:
+**`traefik/traefik.yml`** — Traefik Konfiguration:
 ```yaml
 api:
   dashboard: true
@@ -118,7 +118,9 @@ Im **Cloudflare Dashboard** (Zero Trust → Networks → Tunnels):
 |----------------|---------|
 | `rhnzl.sau-index.de` | `http://localhost:80` |
 
-Da Traefik jetzt auf Port 80 läuft, leitet der Tunnel alle Anfragen an Traefik weiter. Traefik entscheidet anhand des `Host`-Headers, welche App die Anfrage bekommt.
+Da Traefik auf Port 80 läuft, leitet der Tunnel alle Anfragen an Traefik weiter. Traefik entscheidet anhand des `Host`-Headers, welche App die Anfrage bekommt.
+
+> **Wichtig:** Die Service-URL im Tunnel muss `http://localhost:80` sein (nicht HTTPS). Cloudflare übernimmt die TLS-Terminierung.
 
 ---
 
@@ -164,8 +166,6 @@ cd ~/meine-app
 docker compose up -d
 ```
 
-Fertig. Die neue App ist sofort über `meine-app.sau-index.de` erreichbar.
-
 ---
 
 ## Befehle-Übersicht
@@ -185,7 +185,7 @@ Fertig. Die neue App ist sofort über `meine-app.sau-index.de` erreichbar.
 
 ## Zurück zum Standalone-Modus
 
-Falls du Traefik nicht mehr verwenden möchtest und nur eine App betreibst:
+Falls Traefik nicht mehr benötigt wird:
 
 ```bash
 # Traefik stoppen
@@ -200,16 +200,16 @@ docker compose -f docker-compose.standalone.yml up -d --build
 
 ## Architektur-Vergleich
 
-### Vorher (Standalone)
+### Standalone
 ```
 Browser → Port 80/443 → Nginx (Frontend) → Backend
 ```
 
-### Jetzt (Traefik)
+### Traefik (Standard)
 ```
-Browser → Port 80 → Traefik → Nginx (Frontend) → Backend
-                            → Andere App
-                            → Weitere App
+Browser → Cloudflare Tunnel → Traefik (Port 80) → Nginx (Frontend) → Backend
+                                                 → Andere App
+                                                 → Weitere App
 ```
 
 ---
@@ -232,4 +232,4 @@ curl -s http://localhost:8080/api/http/routers | python3 -m json.tool
 
 ### Cloudflare Tunnel verbindet nicht
 - Tunnel muss auf `http://localhost:80` zeigen (nicht 443)
-- Cloudflare SSL-Modus auf "Full" setzen (nicht "Full (strict)")
+- Cloudflare SSL-Modus auf "Full" setzen (nicht "Full (strict)" im Tunnel-Modus)
