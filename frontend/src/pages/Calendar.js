@@ -141,19 +141,19 @@ const CalendarPage = () => {
     return (
       <Card
         data-testid={`event-card-${event.id}`}
-        className={`transition-all hover:shadow-md cursor-pointer ${isPast ? 'opacity-60' : ''} ${isToday ? 'ring-2 ring-emerald-500/30' : ''}`}
+        className={`bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm transition-all hover:shadow-md cursor-pointer ${isPast ? 'opacity-60' : ''} ${isToday ? 'ring-2 ring-emerald-500/30' : ''}`}
         onClick={() => setDetailEvent(event)}
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-stone-900 truncate">{event.title}</h3>
+                <h3 className="font-semibold text-stone-900 dark:text-stone-100 truncate">{event.title}</h3>
                 {isToday && <Badge className="bg-emerald-600 text-white border-0 text-xs">Heute</Badge>}
                 {event.source === 'ics' && <Badge className="bg-blue-100 text-blue-700 border-0 text-xs"><Globe className="w-3 h-3 mr-0.5" />ICS</Badge>}
                 {canSeeFineInfo && event.fine_enabled && <Badge className="bg-amber-100 text-amber-700 border-0 text-xs"><Shield className="w-3 h-3 mr-0.5" />Strafe</Badge>}
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500 dark:text-stone-400">
                 <span className="flex items-center gap-1">
                   <CalendarDays className="w-3.5 h-3.5" />
                   {formatDate(event.date)}
@@ -198,7 +198,7 @@ const CalendarPage = () => {
 
           {/* RSVP Buttons */}
           {user?.member_id && event.response_open && !isPast && (
-            <div className="flex gap-2 mt-3 pt-3 border-t border-stone-100">
+            <div className="flex gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-stone-700">
               <Button
                 data-testid={`btn-zusagen-${event.id}`}
                 size="sm"
@@ -238,14 +238,18 @@ const CalendarPage = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-stone-400">Laden...</div></div>;
+    return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-stone-400 dark:text-stone-500">Laden...</div></div>;
   }
 
   return (
-    <div data-testid="calendar-page" className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+    <div data-testid="calendar-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">Termine</h1>
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Termine</h1>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Veranstaltungen und Rückmeldungen</p>
+        </div>
         <div className="flex items-center gap-2">
           <Tabs value={view} onValueChange={setView}>
             <TabsList className="h-9">
@@ -267,13 +271,13 @@ const CalendarPage = () => {
 
       {/* Calendar View */}
       {view === 'calendar' && (
-        <Card>
+        <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <h2 className="font-semibold text-stone-900">
+              <h2 className="font-semibold text-stone-900 dark:text-stone-100">
                 {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
               </h2>
               <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}>
@@ -281,9 +285,9 @@ const CalendarPage = () => {
               </Button>
             </div>
 
-            <div className="grid grid-cols-7 gap-px bg-stone-200 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-7 gap-px bg-stone-200 dark:bg-stone-700 rounded-lg overflow-hidden">
               {dayNames.map(d => (
-                <div key={d} className="bg-stone-50 p-2 text-center text-xs font-medium text-stone-500">{d}</div>
+                <div key={d} className="bg-stone-50 dark:bg-stone-800 p-2 text-center text-xs font-medium text-stone-500 dark:text-stone-400">{d}</div>
               ))}
               {daysInMonth.map((day, i) => {
                 const key = day.date.toDateString();
@@ -293,22 +297,22 @@ const CalendarPage = () => {
                 return (
                   <div
                     key={i}
-                    className={`bg-white p-1.5 min-h-[70px] sm:min-h-[90px] ${!day.isCurrentMonth ? 'opacity-30' : ''} ${isToday ? 'ring-2 ring-inset ring-emerald-500' : ''}`}
+                    className={`bg-white dark:bg-stone-900 p-1.5 min-h-[70px] sm:min-h-[90px] ${!day.isCurrentMonth ? 'opacity-30' : ''} ${isToday ? 'ring-2 ring-inset ring-emerald-500' : ''}`}
                   >
-                    <div className={`text-xs font-medium mb-1 ${isToday ? 'text-emerald-700' : 'text-stone-600'}`}>
+                    <div className={`text-xs font-medium mb-1 ${isToday ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-600 dark:text-stone-400'}`}>
                       {day.date.getDate()}
                     </div>
                     {dayEvents.slice(0, 2).map(e => (
                       <div
                         key={e.id}
                         onClick={() => setDetailEvent(e)}
-                        className="text-xs px-1.5 py-0.5 mb-0.5 rounded bg-emerald-50 text-emerald-700 truncate cursor-pointer hover:bg-emerald-100 transition-colors"
+                        className="text-xs px-1.5 py-0.5 mb-0.5 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 truncate cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
                       >
                         {e.title}
                       </div>
                     ))}
                     {dayEvents.length > 2 && (
-                      <div className="text-xs text-stone-400 px-1">+{dayEvents.length - 2}</div>
+                      <div className="text-xs text-stone-400 dark:text-stone-500 px-1">+{dayEvents.length - 2}</div>
                     )}
                   </div>
                 );
@@ -323,9 +327,9 @@ const CalendarPage = () => {
         <div className="space-y-6">
           {/* Upcoming */}
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider">Anstehende Termine ({upcomingEvents.length})</h2>
+            <h2 className="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Anstehende Termine ({upcomingEvents.length})</h2>
             {upcomingEvents.length === 0 ? (
-              <p className="text-stone-400 text-sm py-8 text-center">Keine anstehenden Termine</p>
+              <p className="text-stone-400 dark:text-stone-500 text-sm py-8 text-center">Keine anstehenden Termine</p>
             ) : (
               upcomingEvents.map(e => <EventCard key={e.id} event={e} />)
             )}
@@ -334,7 +338,7 @@ const CalendarPage = () => {
           {/* Past */}
           {pastEvents.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider">Vergangene Termine ({pastEvents.length})</h2>
+              <h2 className="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Vergangene Termine ({pastEvents.length})</h2>
               {pastEvents.map(e => <EventCard key={e.id} event={e} isPast />)}
             </div>
           )}
@@ -365,6 +369,7 @@ const CalendarPage = () => {
         />
       )}
 
+    </div>
     </div>
   );
 };
