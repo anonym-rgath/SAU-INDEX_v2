@@ -30,8 +30,5 @@ python-dotenv==1.2.1
 icalendar==7.0.3
 httpx==0.28.1
 
-# Object Storage (Profile Avatars)
-requests==2.32.5
-
 # Image Processing (Avatar Compression)
 Pillow==11.2.1
