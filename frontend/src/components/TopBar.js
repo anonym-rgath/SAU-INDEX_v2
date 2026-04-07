@@ -19,21 +19,36 @@ const TopBar = () => {
     return verwaltPaths.includes(window.location.pathname);
   });
 
-  useEffect(() => {
-    loadAvatar();
-  }, [user]);
-
   const loadAvatar = async () => {
     try {
       const res = await api.get('/profile');
       if (res.data?.avatar_path) {
         const imgRes = await api.get(`/profile/avatar/${res.data.avatar_path}`, { responseType: 'blob' });
-        setAvatarUrl(URL.createObjectURL(imgRes.data));
+        const url = URL.createObjectURL(imgRes.data);
+        setAvatarUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
       }
     } catch {
-      // Kein Avatar vorhanden
+      // Kein Avatar vorhanden oder Fehler beim Laden
     }
   };
+
+  // Avatar beim Login laden
+  useEffect(() => {
+    if (user) loadAvatar();
+    return () => { setAvatarUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; }); };
+  }, [user]);
+
+  // Auf Avatar-Updates von der Profilseite reagieren
+  useEffect(() => {
+    const handler = () => loadAvatar();
+    window.addEventListener('avatar-updated', handler);
+    return () => window.removeEventListener('avatar-updated', handler);
+  }, []);
+
+  // Avatar neu laden wenn Drawer geöffnet wird
+  useEffect(() => {
+    if (drawerOpen && user) loadAvatar();
+  }, [drawerOpen]);
 
   const getInitials = () => {
     const name = user?.username || '?';

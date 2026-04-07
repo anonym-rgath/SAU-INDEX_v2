@@ -97,6 +97,7 @@ const Profile = () => {
       toast.success('Profilbild hochgeladen');
       if (res.data.avatar_path) {
         loadAvatar(res.data.avatar_path);
+        window.dispatchEvent(new Event('avatar-updated'));
       }
     } catch (err) {
       const detail = err.response?.data?.detail;

@@ -398,12 +398,21 @@ def _put_object(path: str, data: bytes, content_type: str) -> dict:
 
 def _get_object(path: str):
     key = _init_storage()
-    resp = sync_requests.get(
-        f"{STORAGE_URL}/objects/{path}",
-        headers={"X-Storage-Key": key}, timeout=60
-    )
-    resp.raise_for_status()
-    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+    for attempt in range(2):
+        try:
+            resp = sync_requests.get(
+                f"{STORAGE_URL}/objects/{path}",
+                headers={"X-Storage-Key": key}, timeout=60
+            )
+            resp.raise_for_status()
+            return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+        except Exception as e:
+            if attempt == 1:
+                raise
+            logger.warning(f"Storage get Versuch {attempt+1} fehlgeschlagen: {e}")
+            global _storage_key
+            _storage_key = None
+            key = _init_storage()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
