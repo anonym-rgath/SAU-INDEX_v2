@@ -317,6 +317,12 @@ class ProfileUpdate(BaseModel):
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     birthday: Optional[str] = None
+    joinDate: Optional[str] = None
+    street: Optional[str] = None
+    zipCode: Optional[str] = None
+    city: Optional[str] = None
+    confession: Optional[str] = None
+    email: Optional[str] = None
 
 class ClubSettingsUpdate(BaseModel):
     founding_date: Optional[str] = None
@@ -2091,6 +2097,12 @@ async def get_profile(auth=Depends(verify_token)):
         "firstName": None,
         "lastName": None,
         "birthday": None,
+        "joinDate": None,
+        "street": None,
+        "zipCode": None,
+        "city": None,
+        "confession": None,
+        "email": None,
         "avatar_path": None,
     }
     
@@ -2100,6 +2112,12 @@ async def get_profile(auth=Depends(verify_token)):
             profile["firstName"] = member.get("firstName")
             profile["lastName"] = member.get("lastName")
             profile["birthday"] = member.get("birthday")
+            profile["joinDate"] = member.get("joinDate")
+            profile["street"] = member.get("street")
+            profile["zipCode"] = member.get("zipCode")
+            profile["city"] = member.get("city")
+            profile["confession"] = member.get("confession")
+            profile["email"] = member.get("email")
             profile["avatar_path"] = member.get("avatar_path")
             profile["member_id"] = member["id"]
     
@@ -2121,6 +2139,18 @@ async def update_profile(data: ProfileUpdate, request: Request, auth=Depends(ver
         update["lastName"] = data.lastName.strip()
     if data.birthday is not None:
         update["birthday"] = data.birthday if data.birthday else None
+    if data.joinDate is not None:
+        update["joinDate"] = data.joinDate if data.joinDate else None
+    if data.street is not None:
+        update["street"] = data.street.strip()
+    if data.zipCode is not None:
+        update["zipCode"] = data.zipCode.strip()
+    if data.city is not None:
+        update["city"] = data.city.strip()
+    if data.confession is not None:
+        update["confession"] = data.confession if data.confession else None
+    if data.email is not None:
+        update["email"] = data.email.strip()
     
     if update:
         await db.members.update_one({"id": user["member_id"]}, {"$set": update})

@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { Camera, Save, User } from 'lucide-react';
 import { api } from '../lib/api';
 
+const CONFESSIONS = ['Römisch-Katholisch', 'Evangelisch', 'Ohne Konfession', 'Sonstige'];
+
 const Profile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -13,7 +15,10 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarBlobUrl, setAvatarBlobUrl] = useState(null);
-  const [form, setForm] = useState({ firstName: '', lastName: '', birthday: '' });
+  const [form, setForm] = useState({
+    firstName: '', lastName: '', birthday: '', joinDate: '',
+    street: '', zipCode: '', city: '', confession: '', email: '',
+  });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -29,10 +34,14 @@ const Profile = () => {
         firstName: res.data.firstName || '',
         lastName: res.data.lastName || '',
         birthday: res.data.birthday || '',
+        joinDate: res.data.joinDate || '',
+        street: res.data.street || '',
+        zipCode: res.data.zipCode || '',
+        city: res.data.city || '',
+        confession: res.data.confession || '',
+        email: res.data.email || '',
       });
-      if (res.data.avatar_path) {
-        loadAvatar(res.data.avatar_path);
-      }
+      if (res.data.avatar_path) loadAvatar(res.data.avatar_path);
     } catch {
       toast.error('Profil konnte nicht geladen werden');
     } finally {
@@ -45,9 +54,7 @@ const Profile = () => {
       const res = await api.get(`/profile/avatar/${path}`, { responseType: 'blob' });
       const url = URL.createObjectURL(res.data);
       setAvatarBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
-    } catch {
-      // Kein Avatar vorhanden
-    }
+    } catch {}
   };
 
   const handleSave = async () => {
@@ -65,32 +72,26 @@ const Profile = () => {
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Client-seitige MIME-Type Validierung
     if (!['image/jpeg', 'image/png'].includes(file.type)) {
       toast.error('Nur JPG und PNG Dateien sind erlaubt');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-
-    // Client-seitige Dateigrößen-Validierung
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Maximale Dateigröße: 5 MB');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-
     if (file.size === 0) {
       toast.error('Leere Datei');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await api.post('/profile/avatar', formData, {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.post('/profile/avatar', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 30000,
       });
@@ -120,11 +121,23 @@ const Profile = () => {
     return (f + l).toUpperCase() || '?';
   };
 
+  const getMemberYears = () => {
+    if (!form.joinDate) return null;
+    const join = new Date(form.joinDate);
+    const now = new Date();
+    let years = now.getFullYear() - join.getFullYear();
+    if (now.getMonth() < join.getMonth() || (now.getMonth() === join.getMonth() && now.getDate() < join.getDate())) {
+      years--;
+    }
+    return years >= 0 ? years : 0;
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-stone-400 dark:text-stone-500">Laden...</div></div>;
   }
 
   const noMember = !profile?.member_id;
+  const memberYears = getMemberYears();
 
   return (
     <div data-testid="profile-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
@@ -134,52 +147,7 @@ const Profile = () => {
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Persönliche Daten verwalten</p>
         </div>
 
-        {/* Avatar */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6">
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative group">
-              {avatarBlobUrl ? (
-                <img
-                  data-testid="profile-avatar-img"
-                  src={avatarBlobUrl}
-                  alt="Profilbild"
-                  className="w-28 h-28 rounded-full object-cover border-4 border-stone-200 dark:border-stone-700"
-                />
-              ) : (
-                <div
-                  data-testid="profile-avatar-initials"
-                  className="w-28 h-28 rounded-full bg-emerald-100 dark:bg-emerald-900/40 border-4 border-stone-200 dark:border-stone-700 flex items-center justify-center"
-                >
-                  <span className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{getInitials()}</span>
-                </div>
-              )}
-              {!noMember && (
-                <button
-                  data-testid="profile-avatar-upload-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg transition-colors disabled:opacity-50"
-                >
-                  <Camera className="w-4 h-4" />
-                </button>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-            </div>
-            {uploading && <p className="text-xs text-stone-400 dark:text-stone-500">Wird hochgeladen...</p>}
-            <div className="text-center">
-              <p className="font-semibold text-stone-900 dark:text-stone-100">{form.firstName} {form.lastName}</p>
-              <p className="text-sm text-stone-500 dark:text-stone-400 capitalize">{profile?.role}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Formulardaten */}
+        {/* Persönliche Daten */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0">
@@ -187,7 +155,7 @@ const Profile = () => {
             </div>
             <div>
               <h2 className="font-semibold text-stone-900 dark:text-stone-100">Persönliche Daten</h2>
-              <p className="text-sm text-stone-500 dark:text-stone-400">Dein Name und Geburtsdatum</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400">Profilbild, Name und Kontaktdaten</p>
             </div>
           </div>
 
@@ -196,45 +164,102 @@ const Profile = () => {
               Dein Account ist keinem Mitgliedsprofil zugeordnet. Bitte wende dich an einen Administrator.
             </p>
           ) : (
-            <div className="space-y-4 pl-[52px]">
+            <div className="space-y-5 pl-[52px]">
+              {/* Avatar */}
+              <div className="flex items-center gap-4">
+                <div className="relative group shrink-0">
+                  {avatarBlobUrl ? (
+                    <img data-testid="profile-avatar-img" src={avatarBlobUrl} alt="Profilbild" className="w-20 h-20 rounded-full object-cover border-2 border-stone-200 dark:border-stone-700" />
+                  ) : (
+                    <div data-testid="profile-avatar-initials" className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/40 border-2 border-stone-200 dark:border-stone-700 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{getInitials()}</span>
+                    </div>
+                  )}
+                  <button
+                    data-testid="profile-avatar-upload-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg transition-colors disabled:opacity-50"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={handleAvatarUpload} />
+                </div>
+                <div>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">JPG oder PNG, max. 5 MB</p>
+                  {uploading && <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Wird hochgeladen...</p>}
+                </div>
+              </div>
+
+              {/* Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Vorname</label>
-                  <Input
-                    data-testid="profile-firstname-input"
-                    value={form.firstName}
-                    onChange={(e) => setForm(p => ({ ...p, firstName: e.target.value }))}
-                    placeholder="Vorname"
-                  />
+                  <Input data-testid="profile-firstname-input" value={form.firstName} onChange={(e) => setForm(p => ({ ...p, firstName: e.target.value }))} placeholder="Vorname" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Nachname</label>
-                  <Input
-                    data-testid="profile-lastname-input"
-                    value={form.lastName}
-                    onChange={(e) => setForm(p => ({ ...p, lastName: e.target.value }))}
-                    placeholder="Nachname"
-                  />
+                  <Input data-testid="profile-lastname-input" value={form.lastName} onChange={(e) => setForm(p => ({ ...p, lastName: e.target.value }))} placeholder="Nachname" />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Geburtstag</label>
-                <Input
-                  data-testid="profile-birthday-input"
-                  type="date"
-                  value={form.birthday}
-                  onChange={(e) => setForm(p => ({ ...p, birthday: e.target.value }))}
-                />
+
+              {/* Geburtstag + Eintrittsdatum */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Geburtstag</label>
+                  <Input data-testid="profile-birthday-input" type="date" value={form.birthday} onChange={(e) => setForm(p => ({ ...p, birthday: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Eintrittsdatum</label>
+                  <Input data-testid="profile-joindate-input" type="date" value={form.joinDate} onChange={(e) => setForm(p => ({ ...p, joinDate: e.target.value }))} />
+                  {memberYears !== null && (
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
+                      Mitglied seit {memberYears} {memberYears === 1 ? 'Jahr' : 'Jahren'}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-end pt-2">
-                <Button
-                  data-testid="profile-save-button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">E-Mail</label>
+                <Input data-testid="profile-email-input" type="email" value={form.email} onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))} placeholder="max@example.de" />
+              </div>
+
+              {/* Adresse */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Straße</label>
+                <Input data-testid="profile-street-input" value={form.street} onChange={(e) => setForm(p => ({ ...p, street: e.target.value }))} placeholder="Musterstraße 1" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Postleitzahl</label>
+                  <Input data-testid="profile-zipcode-input" value={form.zipCode} onChange={(e) => setForm(p => ({ ...p, zipCode: e.target.value }))} placeholder="12345" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Ort</label>
+                  <Input data-testid="profile-city-input" value={form.city} onChange={(e) => setForm(p => ({ ...p, city: e.target.value }))} placeholder="Musterstadt" />
+                </div>
+              </div>
+
+              {/* Konfession */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Konfession</label>
+                <select
+                  data-testid="profile-confession-select"
+                  value={form.confession}
+                  onChange={(e) => setForm(p => ({ ...p, confession: e.target.value }))}
+                  className="w-full h-10 px-3 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                 >
-                  <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Speichern...' : 'Speichern'}
+                  <option value="">Keine Angabe</option>
+                  {CONFESSIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* Speichern */}
+              <div className="flex justify-end pt-2">
+                <Button data-testid="profile-save-button" onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Save className="w-4 h-4 mr-2" />{saving ? 'Speichern...' : 'Speichern'}
                 </Button>
               </div>
             </div>
