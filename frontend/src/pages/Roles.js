@@ -119,18 +119,19 @@ const Roles = () => {
                 <Section label="Statistiken (Erweitert)" />
                 <Row label="Zugriff" admin="full" spiess="full" vorstand="anon" mitglied="none" />
 
-                {/* Einstellungen */}
-                <Section label="Einstellungen" />
+                {/* Konsoleneinstellungen */}
+                <Section label="Konsoleneinstellungen" />
                 <Row label="Zugriff" admin="full" spiess="full" vorstand="full" mitglied="limited" />
                 <Row sub label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
-                <Row sub label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
 
-                {/* Verwaltung */}
-                <Section label="Verwaltung" />
+                {/* Administration */}
+                <Section label="Administration" />
                 <Row label="Profil" admin="full" spiess="full" vorstand="full" mitglied="full" />
                 <Row label="Benutzerrollen" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row sub label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <Row label="Stammdaten des Vereins" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <Row sub label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <Row label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Audit-Log" admin="full" spiess="full" vorstand="full" mitglied="none" />
 
