@@ -30,7 +30,7 @@ const Settings = () => {
     <div data-testid="settings-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Einstellungen</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Konsoleneinstellungen</h1>
         <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">App-Konfiguration und Darstellung</p>
       </div>
 

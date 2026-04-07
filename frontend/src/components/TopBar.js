@@ -76,7 +76,7 @@ const TopBar = () => {
     canManageMembers && { path: '/members', icon: Users, label: 'Benutzerverwaltung' },
     canManageFineTypes && { path: '/fine-types', icon: Tag, label: 'Strafenarten' },
     canManageMembers && { path: '/audit', icon: Shield, label: 'Audit-Log' },
-    { path: '/settings', icon: SlidersHorizontal, label: 'Einstellungen' },
+    { path: '/settings', icon: SlidersHorizontal, label: 'Konsoleneinstellungen' },
   ].filter(Boolean);
 
   const verwaltungPaths = verwaltungItems.map(i => i.path);
