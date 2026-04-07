@@ -6,9 +6,9 @@ const permIcon = (level) => {
     case 'full': return <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-5 text-center">V</span>;
     case 'yes': return <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-5 text-center">V</span>;
     case 'personal': return <span className="inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-5 text-center">P</span>;
-    case 'own': return <span className="inline-block w-5 h-5 rounded-full bg-violet-500 text-white text-[10px] font-bold leading-5 text-center">E</span>;
-    case 'read': return <span className="inline-block w-5 h-5 rounded-full bg-stone-400 text-white text-[10px] font-bold leading-5 text-center">T</span>;
-    case 'limited': return <span className="inline-block w-5 h-5 rounded-full bg-stone-400 text-white text-[10px] font-bold leading-5 text-center">T</span>;
+    case 'own': return <span className="inline-block w-5 h-5 rounded-full bg-violet-500 text-white text-[10px] font-bold leading-5 text-center">T</span>;
+    case 'read': return <span className="inline-block w-5 h-5 rounded-full bg-violet-500 text-white text-[10px] font-bold leading-5 text-center">T</span>;
+    case 'limited': return <span className="inline-block w-5 h-5 rounded-full bg-violet-500 text-white text-[10px] font-bold leading-5 text-center">T</span>;
     case 'anon': return <span className="inline-block w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-5 text-center">A</span>;
     case 'none': return <span className="inline-block w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 text-[10px] font-bold leading-5 text-center">&ndash;</span>;
     case 'no': return <span className="inline-block w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-700 text-stone-400 dark:text-stone-500 text-[10px] font-bold leading-5 text-center">&ndash;</span>;
@@ -16,7 +16,7 @@ const permIcon = (level) => {
   }
 };
 
-const permLabel = { full: 'Vollzugriff', yes: 'Vollzugriff', personal: 'Persönlich', own: 'Eigene', read: 'Teilweise', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Kein Zugriff' };
+const permLabel = { full: 'Vollzugriff', yes: 'Vollzugriff', personal: 'Persönlich', own: 'Teilweise', read: 'Teilweise', limited: 'Teilweise', anon: 'Anonymisiert', none: 'Kein Zugriff', no: 'Kein Zugriff' };
 
 const Section = ({ label }) => (
   <tr className="bg-stone-50 dark:bg-stone-800/50">
@@ -142,8 +142,7 @@ const Roles = () => {
           <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs text-stone-500 dark:text-stone-400">
             <div className="flex items-center gap-1.5">{permIcon('full')} <span>Vollzugriff</span></div>
             <div className="flex items-center gap-1.5">{permIcon('personal')} <span>Persönlich</span></div>
-            <div className="flex items-center gap-1.5">{permIcon('own')} <span>Eigene</span></div>
-            <div className="flex items-center gap-1.5">{permIcon('limited')} <span>Teilweise</span></div>
+            <div className="flex items-center gap-1.5">{permIcon('own')} <span>Teilweise</span></div>
             <div className="flex items-center gap-1.5">{permIcon('anon')} <span>Anonymisiert</span></div>
             <div className="flex items-center gap-1.5">{permIcon('none')} <span>Kein Zugriff</span></div>
           </div>
