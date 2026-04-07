@@ -328,11 +328,17 @@ class ClubSettingsUpdate(BaseModel):
     founding_date: Optional[str] = None
     fiscal_year_start_month: Optional[int] = None
 
-# --- Object Storage ---
+# --- Avatar Storage ---
+# Lokale Dateispeicherung (primär) mit optionalem Cloud-Fallback
+AVATAR_DIR = os.path.join(os.path.dirname(__file__), "avatars")
+os.makedirs(AVATAR_DIR, exist_ok=True)
+
+# Cloud Storage (optional, nur in Emergent-Umgebung)
 STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
 EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
 APP_NAME = "rheinzelmaenner"
 _storage_key = None
+_use_cloud_storage = False
 
 # Avatar-Konfiguration
 AVATAR_ALLOWED_MIMES = {"image/jpeg", "image/png"}
@@ -354,16 +360,12 @@ def _validate_image_bytes(data: bytes) -> str:
 
 def _compress_avatar(data: bytes, detected_mime: str) -> tuple[bytes, str]:
     """Komprimiert und skaliert das Avatar-Bild auf max. Dimension. Gibt (bytes, content_type) zurück."""
-    from PIL import Image
+    from PIL import Image, ImageOps
     import io
     img = Image.open(io.BytesIO(data))
-    # EXIF-Rotation anwenden
-    from PIL import ImageOps
     img = ImageOps.exif_transpose(img)
-    # Skalieren falls nötig
     if img.width > AVATAR_MAX_DIMENSION or img.height > AVATAR_MAX_DIMENSION:
         img.thumbnail((AVATAR_MAX_DIMENSION, AVATAR_MAX_DIMENSION), Image.LANCZOS)
-    # Immer als JPEG speichern für einheitliche Größe
     if img.mode in ('RGBA', 'P'):
         img = img.convert('RGB')
     buf = io.BytesIO()
@@ -371,58 +373,82 @@ def _compress_avatar(data: bytes, detected_mime: str) -> tuple[bytes, str]:
     return buf.getvalue(), "image/jpeg"
 
 def _init_storage():
-    global _storage_key
+    global _storage_key, _use_cloud_storage
     if _storage_key:
         return _storage_key
-    for attempt in range(3):
-        try:
-            resp = sync_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
-            resp.raise_for_status()
-            _storage_key = resp.json()["storage_key"]
-            return _storage_key
-        except Exception as e:
-            if attempt == 2:
-                raise
-            logger.warning(f"Storage init Versuch {attempt+1} fehlgeschlagen: {e}")
-            import time; time.sleep(1)
+    if not EMERGENT_KEY:
+        _use_cloud_storage = False
+        return None
+    try:
+        resp = sync_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=10)
+        resp.raise_for_status()
+        _storage_key = resp.json()["storage_key"]
+        _use_cloud_storage = True
+        return _storage_key
+    except Exception as e:
+        logger.warning(f"Cloud Storage nicht verfügbar, nutze lokale Speicherung: {e}")
+        _use_cloud_storage = False
+        return None
 
-def _put_object(path: str, data: bytes, content_type: str) -> dict:
-    key = _init_storage()
-    for attempt in range(2):
+def _save_avatar(member_id: str, data: bytes, content_type: str) -> str:
+    """Speichert Avatar lokal oder in der Cloud. Gibt den Pfad zurück."""
+    filename = f"{uuid.uuid4()}.jpg"
+    
+    # Cloud-Versuch wenn verfügbar
+    if _use_cloud_storage or _storage_key:
         try:
-            resp = sync_requests.put(
-                f"{STORAGE_URL}/objects/{path}",
-                headers={"X-Storage-Key": key, "Content-Type": content_type},
-                data=data, timeout=120
+            cloud_path = f"{APP_NAME}/avatars/{member_id}/{filename}"
+            key = _init_storage()
+            if key:
+                resp = sync_requests.put(
+                    f"{STORAGE_URL}/objects/{cloud_path}",
+                    headers={"X-Storage-Key": key, "Content-Type": content_type},
+                    data=data, timeout=120
+                )
+                resp.raise_for_status()
+                return f"cloud:{cloud_path}"
+        except Exception as e:
+            logger.warning(f"Cloud-Upload fehlgeschlagen, speichere lokal: {e}")
+    
+    # Lokale Speicherung
+    member_dir = os.path.join(AVATAR_DIR, member_id)
+    os.makedirs(member_dir, exist_ok=True)
+    filepath = os.path.join(member_dir, filename)
+    with open(filepath, 'wb') as f:
+        f.write(data)
+    return f"local:{member_id}/{filename}"
+
+def _load_avatar(path: str):
+    """Lädt Avatar von lokal oder Cloud. Gibt (bytes, content_type) zurück."""
+    if path.startswith("cloud:"):
+        cloud_path = path[6:]
+        key = _init_storage()
+        if key:
+            resp = sync_requests.get(
+                f"{STORAGE_URL}/objects/{cloud_path}",
+                headers={"X-Storage-Key": key}, timeout=60
             )
             resp.raise_for_status()
-            return resp.json()
-        except Exception as e:
-            if attempt == 1:
-                raise
-            logger.warning(f"Storage upload Versuch {attempt+1} fehlgeschlagen: {e}")
-            # Storage-Key zurücksetzen und neu initialisieren
-            global _storage_key
-            _storage_key = None
-            key = _init_storage()
-
-def _get_object(path: str):
-    key = _init_storage()
-    for attempt in range(2):
-        try:
+            return resp.content, resp.headers.get("Content-Type", "image/jpeg")
+        raise FileNotFoundError("Cloud Storage nicht verfügbar")
+    elif path.startswith("local:"):
+        local_path = path[6:]
+        filepath = os.path.join(AVATAR_DIR, local_path)
+        if not os.path.isfile(filepath):
+            raise FileNotFoundError(f"Avatar nicht gefunden: {filepath}")
+        with open(filepath, 'rb') as f:
+            return f.read(), "image/jpeg"
+    else:
+        # Legacy-Pfad (alte Cloud-Uploads ohne Prefix)
+        key = _init_storage()
+        if key:
             resp = sync_requests.get(
                 f"{STORAGE_URL}/objects/{path}",
                 headers={"X-Storage-Key": key}, timeout=60
             )
             resp.raise_for_status()
-            return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
-        except Exception as e:
-            if attempt == 1:
-                raise
-            logger.warning(f"Storage get Versuch {attempt+1} fehlgeschlagen: {e}")
-            global _storage_key
-            _storage_key = None
-            key = _init_storage()
+            return resp.content, resp.headers.get("Content-Type", "image/jpeg")
+        raise FileNotFoundError("Avatar nicht verfügbar")
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -2195,14 +2221,7 @@ async def upload_avatar(request: Request, file: UploadFile = File(...), auth=Dep
         logger.error(f"Bildkomprimierung fehlgeschlagen: {e}")
         raise HTTPException(status_code=400, detail="Bild konnte nicht verarbeitet werden. Bitte ein gültiges JPG oder PNG hochladen.")
     
-    path = f"{APP_NAME}/avatars/{user['member_id']}/{uuid.uuid4()}.jpg"
-    
-    # Upload mit Fehlerbehandlung
-    try:
-        _put_object(path, compressed_data, final_mime)
-    except Exception as e:
-        logger.error(f"Avatar-Upload fehlgeschlagen: {e}")
-        raise HTTPException(status_code=502, detail="Upload fehlgeschlagen. Bitte später erneut versuchen.")
+    path = _save_avatar(user['member_id'], compressed_data, final_mime)
     
     await db.members.update_one(
         {"id": user["member_id"]},
@@ -2221,7 +2240,7 @@ async def upload_avatar(request: Request, file: UploadFile = File(...), auth=Dep
 @api_router.get("/profile/avatar/{path:path}")
 async def get_avatar(path: str, auth: str = None):
     try:
-        data, content_type = _get_object(path)
+        data, content_type = _load_avatar(path)
         return Response(content=data, media_type=content_type)
     except Exception:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden")
@@ -2306,12 +2325,12 @@ async def startup_db_client():
             FISCAL_YEAR_START_MONTH = club_settings["fiscal_year_start_month"]
             logger.info(f"Geschäftsjahr-Startmonat aus DB geladen: {FISCAL_YEAR_START_MONTH}")
         
-        # Object Storage initialisieren
-        try:
-            _init_storage()
-            logger.info("Object Storage initialisiert")
-        except Exception as e:
-            logger.warning(f"Object Storage Init fehlgeschlagen: {e}")
+        # Avatar Storage initialisieren
+        _init_storage()
+        if _use_cloud_storage:
+            logger.info("Avatar-Speicherung: Cloud (Emergent Object Storage)")
+        else:
+            logger.info(f"Avatar-Speicherung: Lokal ({AVATAR_DIR})")
         
         # Tägliche ICS-Synchronisation im Hintergrund starten
         asyncio.create_task(_daily_ics_sync())

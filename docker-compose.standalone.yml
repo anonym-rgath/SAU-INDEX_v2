@@ -35,6 +35,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    volumes:
+      - avatar_data:/app/avatars
     networks:
       - rheinzel-network
     healthcheck:
@@ -62,6 +64,7 @@ services:
 
 volumes:
   mongodb_data:
+  avatar_data:
 
 networks:
   rheinzel-network:
