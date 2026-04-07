@@ -262,23 +262,22 @@ const Profile = () => {
                   <Save className="w-4 h-4 mr-2" />{saving ? 'Speichern...' : 'Speichern'}
                 </Button>
               </div>
+
+              {/* Kontoinformationen */}
+              <div className="border-t border-stone-200 dark:border-stone-700 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-stone-500 dark:text-stone-400">Benutzername</p>
+                    <p className="font-medium text-stone-900 dark:text-stone-100">{profile?.username}</p>
+                  </div>
+                  <div>
+                    <p className="text-stone-500 dark:text-stone-400">Rolle</p>
+                    <p className="font-medium text-stone-900 dark:text-stone-100 capitalize">{profile?.role}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-        </div>
-
-        {/* Kontoinformationen */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-4">
-          <h2 className="font-semibold text-stone-900 dark:text-stone-100">Kontoinformationen</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-stone-500 dark:text-stone-400">Benutzername</p>
-              <p className="font-medium text-stone-900 dark:text-stone-100">{profile?.username}</p>
-            </div>
-            <div>
-              <p className="text-stone-500 dark:text-stone-400">Rolle</p>
-              <p className="font-medium text-stone-900 dark:text-stone-100 capitalize">{profile?.role}</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
