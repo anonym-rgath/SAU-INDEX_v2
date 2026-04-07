@@ -119,11 +119,6 @@ const Roles = () => {
                 <Section label="Statistiken (Erweitert)" />
                 <Row label="Zugriff" admin="full" spiess="full" vorstand="anon" mitglied="none" />
 
-                {/* Konsoleneinstellungen */}
-                <Section label="Konsoleneinstellungen" />
-                <Row label="Zugriff" admin="full" spiess="full" vorstand="full" mitglied="limited" />
-                <Row sub label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
-
                 {/* Administration */}
                 <Section label="Administration" />
                 <Row label="Profil" admin="full" spiess="full" vorstand="full" mitglied="full" />
@@ -134,6 +129,8 @@ const Roles = () => {
                 <Row sub label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <Row label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Audit-Log" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <Row label="Konsoleneinstellungen" admin="full" spiess="full" vorstand="full" mitglied="full" />
+                <Row sub label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
 
               </tbody>
             </table>
