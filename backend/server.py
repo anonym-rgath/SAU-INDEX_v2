@@ -318,6 +318,10 @@ class ProfileUpdate(BaseModel):
     lastName: Optional[str] = None
     birthday: Optional[str] = None
 
+class ClubSettingsUpdate(BaseModel):
+    founding_date: Optional[str] = None
+    fiscal_year_start_month: Optional[int] = None
+
 # --- Object Storage ---
 STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
 EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
@@ -1961,6 +1965,58 @@ async def update_ics_settings(input: ICSSettingsUpdate, request: Request, auth=D
     
     return {"message": "ICS-Einstellungen gespeichert"}
 
+# ======== CLUB SETTINGS / STAMMDATEN ========
+
+@api_router.get("/club-settings")
+async def get_club_settings(auth=Depends(require_any_role)):
+    """Vereinsstammdaten abrufen"""
+    settings = await db.settings.find_one({"key": "club_settings"}, {"_id": 0})
+    if not settings:
+        return {"founding_date": None, "fiscal_year_start_month": FISCAL_YEAR_START_MONTH}
+    return {
+        "founding_date": settings.get("founding_date"),
+        "fiscal_year_start_month": settings.get("fiscal_year_start_month", FISCAL_YEAR_START_MONTH),
+    }
+
+@api_router.put("/club-settings")
+async def update_club_settings(input: ClubSettingsUpdate, request: Request, auth=Depends(require_any_role)):
+    """Vereinsstammdaten aktualisieren"""
+    update_data = {}
+    
+    if input.founding_date is not None:
+        # Datumsvalidierung
+        try:
+            datetime.fromisoformat(input.founding_date)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Ungültiges Datumsformat")
+        update_data["founding_date"] = input.founding_date
+    
+    if input.fiscal_year_start_month is not None:
+        if input.fiscal_year_start_month < 1 or input.fiscal_year_start_month > 12:
+            raise HTTPException(status_code=400, detail="Startmonat muss zwischen 1 und 12 liegen")
+        update_data["fiscal_year_start_month"] = input.fiscal_year_start_month
+        # Globale Variable aktualisieren
+        global FISCAL_YEAR_START_MONTH
+        FISCAL_YEAR_START_MONTH = input.fiscal_year_start_month
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Keine Änderungen")
+    
+    await db.settings.update_one(
+        {"key": "club_settings"},
+        {"$set": {**update_data, "key": "club_settings"}},
+        upsert=True
+    )
+    
+    await log_audit(
+        AuditAction.UPDATE, "settings", "club_settings",
+        auth.get('user_id'), auth.get('username'),
+        f"Vereinsstammdaten aktualisiert: {', '.join(update_data.keys())}",
+        request.client.host if request.client else None
+    )
+    
+    return {"message": "Vereinsstammdaten gespeichert"}
+
 @api_router.post("/settings/ics/sync")
 async def manual_ics_sync(request: Request, auth=Depends(require_admin)):
     """Manuelle ICS-Synchronisation (nur Admin)"""
@@ -2212,6 +2268,13 @@ async def startup_db_client():
         await db.event_responses.create_index([("event_id", 1), ("member_id", 1)], unique=True)
         await db.event_responses.create_index("event_id")
         logger.info("Datenbank-Indizes erstellt")
+        
+        # Vereinsstammdaten laden (Geschäftsjahr-Startmonat)
+        club_settings = await db.settings.find_one({"key": "club_settings"}, {"_id": 0})
+        if club_settings and club_settings.get("fiscal_year_start_month"):
+            global FISCAL_YEAR_START_MONTH
+            FISCAL_YEAR_START_MONTH = club_settings["fiscal_year_start_month"]
+            logger.info(f"Geschäftsjahr-Startmonat aus DB geladen: {FISCAL_YEAR_START_MONTH}")
         
         # Object Storage initialisieren
         try:

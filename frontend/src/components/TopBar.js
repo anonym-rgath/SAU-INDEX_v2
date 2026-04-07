@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle, Building2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -15,7 +15,7 @@ const TopBar = () => {
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
-    const verwaltPaths = ['/members', '/fine-types', '/audit', '/settings', '/profile', '/roles'];
+    const verwaltPaths = ['/members', '/fine-types', '/audit', '/settings', '/profile', '/roles', '/club-settings'];
     return verwaltPaths.includes(window.location.pathname);
   });
 
@@ -71,6 +71,7 @@ const TopBar = () => {
   // Administration sub-items
   const verwaltungItems = [
     { path: '/profile', icon: UserCircle, label: 'Profil' },
+    canManageMembers && { path: '/club-settings', icon: Building2, label: 'Stammdaten' },
     canManageMembers && { path: '/roles', icon: ShieldCheck, label: 'Benutzerrollen' },
     canManageMembers && { path: '/members', icon: Users, label: 'Benutzerverwaltung' },
     canManageFineTypes && { path: '/fine-types', icon: Tag, label: 'Strafenarten' },

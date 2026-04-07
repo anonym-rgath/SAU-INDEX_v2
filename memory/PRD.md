@@ -94,6 +94,8 @@ Full-stack application for a "Schützenzug" (marksmen's platoon, "Rheinzelmänne
 - 2026-04-03: Complete documentation overhaul (README.md, DOCKER_DEPLOYMENT.md, HTTPS_SETUP.md, TRAEFIK_SETUP.md)
 - 2026-04-07: Avatar upload hardened: JPG/PNG only, magic bytes validation, Pillow compression (512px max), retry logic
 - 2026-04-07: Sidebar avatar fix: reload on drawer open, avatar-updated event sync, memory leak fix, _get_object retry
+- 2026-04-07: Benutzerrollen: "Eigene" → "Teilweise" mit Violet-Farbe
+- 2026-04-07: Neue Seite "Stammdaten des Vereins" (Gründungsdatum + Geschäftsjahr-Startmonat, global nutzbar)
 
 ## Credentials
 - Admin: `admin` / `admin123`

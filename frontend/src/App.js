@@ -17,6 +17,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
 const Settings = lazy(() => import('./pages/Settings'));
+const ClubSettings = lazy(() => import('./pages/ClubSettings'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -64,6 +65,7 @@ function App() {
               <Route path="fine-types" element={<ManagementRoute><FineTypes /></ManagementRoute>} />
               <Route path="users" element={<Navigate to="/members" replace />} />
               <Route path="audit" element={<ManagementRoute><AuditLogs /></ManagementRoute>} />
+              <Route path="club-settings" element={<ManagementRoute><ClubSettings /></ManagementRoute>} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<RoleBasedRedirect />} />
