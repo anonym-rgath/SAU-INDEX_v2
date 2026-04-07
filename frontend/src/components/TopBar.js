@@ -73,7 +73,7 @@ const TopBar = () => {
     { path: '/profile', icon: UserCircle, label: 'Profil' },
     canManageMembers && { path: '/roles', icon: ShieldCheck, label: 'Benutzerrollen' },
     canManageMembers && { path: '/members', icon: Users, label: 'Benutzerverwaltung' },
-    canManageMembers && { path: '/club-settings', icon: Building2, label: 'Stammdaten des Vereins' },
+    { path: '/club-settings', icon: Building2, label: 'Stammdaten des Vereins' },
     canManageFineTypes && { path: '/fine-types', icon: Tag, label: 'Strafenarten' },
     canManageMembers && { path: '/audit', icon: Shield, label: 'Audit-Log' },
     { path: '/settings', icon: SlidersHorizontal, label: 'Konsoleneinstellungen' },

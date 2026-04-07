@@ -125,7 +125,7 @@ const Roles = () => {
                 <Row label="Benutzerrollen" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Benutzerverwaltung" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row sub label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <Row label="Stammdaten des Vereins" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <Row label="Stammdaten des Vereins" admin="full" spiess="full" vorstand="full" mitglied="read" />
                 <Row sub label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <Row label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Audit-Log" admin="full" spiess="full" vorstand="full" mitglied="none" />

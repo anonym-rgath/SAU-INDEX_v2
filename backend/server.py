@@ -1926,7 +1926,7 @@ async def update_ics_settings(input: ICSSettingsUpdate, request: Request, auth=D
 # ======== CLUB SETTINGS / STAMMDATEN ========
 
 @api_router.get("/club-settings")
-async def get_club_settings(auth=Depends(require_any_role)):
+async def get_club_settings(auth=Depends(verify_token)):
     """Vereinsstammdaten abrufen"""
     settings = await db.settings.find_one({"key": "club_settings"}, {"_id": 0})
     if not settings:

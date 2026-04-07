@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
+import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import { toast } from 'sonner';
 
@@ -38,6 +39,8 @@ const Section = ({ icon: Icon, title, description, children }) => (
 );
 
 const ClubSettings = () => {
+  const { isMitglied } = useAuth();
+  const canEdit = !isMitglied;
   const [foundingDate, setFoundingDate] = useState('');
   const [fiscalYearStartMonth, setFiscalYearStartMonth] = useState(8);
   const [loading, setLoading] = useState(true);
@@ -52,7 +55,9 @@ const ClubSettings = () => {
   const [icsSyncing, setIcsSyncing] = useState(false);
 
   useEffect(() => {
-    Promise.all([loadSettings(), loadIcsSettings()]).finally(() => setLoading(false));
+    const promises = [loadSettings()];
+    if (canEdit) promises.push(loadIcsSettings());
+    Promise.all(promises).finally(() => setLoading(false));
   }, []);
 
   const loadSettings = async () => {
@@ -152,11 +157,14 @@ const ClubSettings = () => {
             type="date"
             value={foundingDate}
             onChange={e => setFoundingDate(e.target.value)}
-            className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+            disabled={!canEdit}
+            className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           />
-          <Button data-testid="save-founding-date-button" onClick={handleSaveFoundingDate} disabled={savingFoundingDate} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
-            <Save className="w-4 h-4 mr-1.5" />{savingFoundingDate ? 'Speichert...' : 'Speichern'}
-          </Button>
+          {canEdit && (
+            <Button data-testid="save-founding-date-button" onClick={handleSaveFoundingDate} disabled={savingFoundingDate} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
+              <Save className="w-4 h-4 mr-1.5" />{savingFoundingDate ? 'Speichert...' : 'Speichern'}
+            </Button>
+          )}
         </Section>
 
         {/* Geschäftsjahr */}
@@ -165,7 +173,8 @@ const ClubSettings = () => {
             data-testid="fiscal-year-month-select"
             value={fiscalYearStartMonth}
             onChange={e => setFiscalYearStartMonth(Number(e.target.value))}
-            className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors appearance-none"
+            disabled={!canEdit}
+            className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {MONTHS.map(m => (
               <option key={m.value} value={m.value}>{m.label}</option>
@@ -174,12 +183,15 @@ const ClubSettings = () => {
           <p className="text-xs text-stone-400 dark:text-stone-500">
             Aktuelles Geschäftsjahr: {getFiscalYearPreview()}
           </p>
-          <Button data-testid="save-fiscal-year-button" onClick={handleSaveFiscalYear} disabled={savingFiscalYear} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
-            <Save className="w-4 h-4 mr-1.5" />{savingFiscalYear ? 'Speichert...' : 'Speichern'}
-          </Button>
+          {canEdit && (
+            <Button data-testid="save-fiscal-year-button" onClick={handleSaveFiscalYear} disabled={savingFiscalYear} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
+              <Save className="w-4 h-4 mr-1.5" />{savingFiscalYear ? 'Speichert...' : 'Speichern'}
+            </Button>
+          )}
         </Section>
 
-        {/* ICS-Kalender */}
+        {/* ICS-Kalender - nur für Admin/Spieß/Vorstand */}
+        {canEdit && (
         <Section icon={Globe} title="ICS-Kalender" description="Externen Kalender per ICS-URL abonnieren">
           <div className="space-y-2">
             <Label>ICS-URL</Label>
@@ -201,6 +213,7 @@ const ClubSettings = () => {
             </Button>
           </div>
         </Section>
+        )}
       </div>
     </div>
   );
