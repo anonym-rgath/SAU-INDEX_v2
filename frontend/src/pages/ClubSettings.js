@@ -41,7 +41,8 @@ const ClubSettings = () => {
   const [foundingDate, setFoundingDate] = useState('');
   const [fiscalYearStartMonth, setFiscalYearStartMonth] = useState(8);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingFoundingDate, setSavingFoundingDate] = useState(false);
+  const [savingFiscalYear, setSavingFiscalYear] = useState(false);
 
   // ICS State
   const [icsUrl, setIcsUrl] = useState('');
@@ -73,22 +74,31 @@ const ClubSettings = () => {
     } catch { /* ignore */ }
   };
 
-  const handleSave = async () => {
+  const handleSaveFoundingDate = async () => {
     if (!foundingDate) {
       toast.error('Gründungsdatum ist ein Pflichtfeld');
       return;
     }
-    setSaving(true);
+    setSavingFoundingDate(true);
     try {
-      await api.put('/club-settings', {
-        founding_date: foundingDate,
-        fiscal_year_start_month: fiscalYearStartMonth,
-      });
-      toast.success('Vereinsstammdaten gespeichert');
+      await api.put('/club-settings', { founding_date: foundingDate });
+      toast.success('Gründungsdatum gespeichert');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Fehler beim Speichern');
     } finally {
-      setSaving(false);
+      setSavingFoundingDate(false);
+    }
+  };
+
+  const handleSaveFiscalYear = async () => {
+    setSavingFiscalYear(true);
+    try {
+      await api.put('/club-settings', { fiscal_year_start_month: fiscalYearStartMonth });
+      toast.success('Geschäftsjahr gespeichert');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Fehler beim Speichern');
+    } finally {
+      setSavingFiscalYear(false);
     }
   };
 
@@ -144,6 +154,9 @@ const ClubSettings = () => {
             onChange={e => setFoundingDate(e.target.value)}
             className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
           />
+          <Button data-testid="save-founding-date-button" onClick={handleSaveFoundingDate} disabled={savingFoundingDate} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
+            <Save className="w-4 h-4 mr-1.5" />{savingFoundingDate ? 'Speichert...' : 'Speichern'}
+          </Button>
         </Section>
 
         {/* Geschäftsjahr */}
@@ -161,18 +174,10 @@ const ClubSettings = () => {
           <p className="text-xs text-stone-400 dark:text-stone-500">
             Aktuelles Geschäftsjahr: {getFiscalYearPreview()}
           </p>
+          <Button data-testid="save-fiscal-year-button" onClick={handleSaveFiscalYear} disabled={savingFiscalYear} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
+            <Save className="w-4 h-4 mr-1.5" />{savingFiscalYear ? 'Speichert...' : 'Speichern'}
+          </Button>
         </Section>
-
-        {/* Speichern Stammdaten */}
-        <Button
-          data-testid="save-club-settings-button"
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-base flex items-center justify-center gap-2 transition-colors"
-        >
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          {saving ? 'Speichern...' : 'Speichern'}
-        </Button>
 
         {/* ICS-Kalender */}
         <Section icon={Globe} title="ICS-Kalender" description="Externen Kalender per ICS-URL abonnieren">
