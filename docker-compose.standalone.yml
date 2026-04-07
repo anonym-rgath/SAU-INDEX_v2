@@ -36,7 +36,7 @@ services:
       mongodb:
         condition: service_healthy
     volumes:
-      - avatar_data:/app/avatars
+      - avatar_data:/app/data/avatars
     networks:
       - rheinzel-network
     healthcheck:

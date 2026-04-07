@@ -328,7 +328,7 @@ class ClubSettingsUpdate(BaseModel):
     fiscal_year_start_month: Optional[int] = None
 
 # --- Avatar Storage (Lokal) ---
-AVATAR_DIR = os.path.join(os.path.dirname(__file__), "avatars")
+AVATAR_DIR = os.environ.get("AVATAR_DIR", "/app/data/avatars")
 os.makedirs(AVATAR_DIR, exist_ok=True)
 
 # Avatar-Konfiguration
