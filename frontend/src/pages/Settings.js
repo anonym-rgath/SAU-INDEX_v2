@@ -1,16 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../lib/api';
+import React, { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
 import { Switch } from '../components/ui/switch';
-import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Button } from '../components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select';
-import { toast } from 'sonner';
-import { Globe, Moon, Languages, RefreshCw, Save } from 'lucide-react';
+import { Moon, Languages } from 'lucide-react';
 
 const SettingsSection = ({ icon: Icon, title, description, children }) => (
   <div data-testid={`settings-section-${title.toLowerCase().replace(/\s/g, '-')}`} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
@@ -29,44 +24,7 @@ const SettingsSection = ({ icon: Icon, title, description, children }) => (
 
 const Settings = () => {
   const { darkMode, toggleDarkMode } = useTheme();
-  const { canManageICS } = useAuth();
   const [language, setLanguage] = useState('de');
-
-  const [icsUrl, setIcsUrl] = useState('');
-  const [syncEnabled, setSyncEnabled] = useState(false);
-  const [lastSync, setLastSync] = useState(null);
-  const [icsSaving, setIcsSaving] = useState(false);
-  const [icsSyncing, setIcsSyncing] = useState(false);
-
-  useEffect(() => { if (canManageICS) loadIcsSettings(); }, [canManageICS]);
-
-  const loadIcsSettings = async () => {
-    try {
-      const res = await api.ics.getSettings();
-      setIcsUrl(res.data.ics_url || '');
-      setSyncEnabled(res.data.sync_enabled || false);
-      setLastSync(res.data.last_sync);
-    } catch { /* ignore */ }
-  };
-
-  const handleSaveIcs = async () => {
-    setIcsSaving(true);
-    try {
-      await api.ics.updateSettings({ ics_url: icsUrl, sync_enabled: syncEnabled });
-      toast.success('ICS-Einstellungen gespeichert');
-    } catch { toast.error('Fehler beim Speichern'); }
-    finally { setIcsSaving(false); }
-  };
-
-  const handleSyncNow = async () => {
-    setIcsSyncing(true);
-    try {
-      const res = await api.ics.sync();
-      toast.success(`Sync: ${res.data.created || 0} neu, ${res.data.updated || 0} aktualisiert`);
-      loadIcsSettings();
-    } catch { toast.error('Sync fehlgeschlagen'); }
-    finally { setIcsSyncing(false); }
-  };
 
   return (
     <div data-testid="settings-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
@@ -103,31 +61,6 @@ const Settings = () => {
           <Switch data-testid="dark-mode-toggle" checked={darkMode} onCheckedChange={toggleDarkMode} />
         </div>
       </SettingsSection>
-
-      {/* ICS - nur für Admin */}
-      {canManageICS && (
-        <SettingsSection icon={Globe} title="ICS-Kalender" description="Externen Kalender per ICS-URL abonnieren">
-          <div className="space-y-2">
-            <Label>ICS-URL</Label>
-            <Input data-testid="settings-ics-url-input" value={icsUrl} onChange={(e) => setIcsUrl(e.target.value)} placeholder="https://outlook.live.com/.../calendar.ics" className="h-12 rounded-xl border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 text-sm" />
-          </div>
-          <div className="flex items-center justify-between">
-            <div><Label>Automatische Synchronisation</Label><p className="text-xs text-stone-400 dark:text-stone-500">Einmal täglich synchronisieren</p></div>
-            <Switch data-testid="settings-ics-sync-toggle" checked={syncEnabled} onCheckedChange={setSyncEnabled} />
-          </div>
-          <div className="bg-stone-50 dark:bg-stone-800 rounded-xl p-3">
-            <p className="text-xs text-stone-500 dark:text-stone-400">Letzte Synchronisation: <strong>{lastSync ? new Date(lastSync).toLocaleString('de-DE') : 'Noch nie'}</strong></p>
-          </div>
-          <div className="flex gap-2">
-            <Button data-testid="settings-ics-save-button" onClick={handleSaveIcs} disabled={icsSaving} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
-              <Save className="w-4 h-4 mr-1.5" />{icsSaving ? 'Speichert...' : 'Speichern'}
-            </Button>
-            <Button data-testid="settings-ics-sync-button" onClick={handleSyncNow} disabled={icsSyncing || !icsUrl} variant="outline" className="h-10 px-5 rounded-full text-sm">
-              <RefreshCw className={`w-4 h-4 mr-1.5 ${icsSyncing ? 'animate-spin' : ''}`} />Jetzt synchronisieren
-            </Button>
-          </div>
-        </SettingsSection>
-      )}
 
     </div>
     </div>
