@@ -324,24 +324,77 @@ EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
 APP_NAME = "rheinzelmaenner"
 _storage_key = None
 
+# Avatar-Konfiguration
+AVATAR_ALLOWED_MIMES = {"image/jpeg", "image/png"}
+AVATAR_MAX_SIZE = 5 * 1024 * 1024  # 5 MB
+AVATAR_MAX_DIMENSION = 512  # Max Breite/Höhe nach Komprimierung
+AVATAR_JPEG_QUALITY = 85
+# Magic Bytes für Bild-Validierung
+MAGIC_BYTES = {
+    b'\xff\xd8\xff': "image/jpeg",
+    b'\x89PNG': "image/png",
+}
+
+def _validate_image_bytes(data: bytes) -> str:
+    """Validiert die tatsächlichen Bilddaten anhand der Magic Bytes. Gibt den MIME-Type zurück."""
+    for magic, mime in MAGIC_BYTES.items():
+        if data[:len(magic)] == magic:
+            return mime
+    raise ValueError("Ungültiges Bildformat. Nur JPG und PNG werden unterstützt.")
+
+def _compress_avatar(data: bytes, detected_mime: str) -> tuple[bytes, str]:
+    """Komprimiert und skaliert das Avatar-Bild auf max. Dimension. Gibt (bytes, content_type) zurück."""
+    from PIL import Image
+    import io
+    img = Image.open(io.BytesIO(data))
+    # EXIF-Rotation anwenden
+    from PIL import ImageOps
+    img = ImageOps.exif_transpose(img)
+    # Skalieren falls nötig
+    if img.width > AVATAR_MAX_DIMENSION or img.height > AVATAR_MAX_DIMENSION:
+        img.thumbnail((AVATAR_MAX_DIMENSION, AVATAR_MAX_DIMENSION), Image.LANCZOS)
+    # Immer als JPEG speichern für einheitliche Größe
+    if img.mode in ('RGBA', 'P'):
+        img = img.convert('RGB')
+    buf = io.BytesIO()
+    img.save(buf, format='JPEG', quality=AVATAR_JPEG_QUALITY, optimize=True)
+    return buf.getvalue(), "image/jpeg"
+
 def _init_storage():
     global _storage_key
     if _storage_key:
         return _storage_key
-    resp = sync_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
-    resp.raise_for_status()
-    _storage_key = resp.json()["storage_key"]
-    return _storage_key
+    for attempt in range(3):
+        try:
+            resp = sync_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
+            resp.raise_for_status()
+            _storage_key = resp.json()["storage_key"]
+            return _storage_key
+        except Exception as e:
+            if attempt == 2:
+                raise
+            logger.warning(f"Storage init Versuch {attempt+1} fehlgeschlagen: {e}")
+            import time; time.sleep(1)
 
 def _put_object(path: str, data: bytes, content_type: str) -> dict:
     key = _init_storage()
-    resp = sync_requests.put(
-        f"{STORAGE_URL}/objects/{path}",
-        headers={"X-Storage-Key": key, "Content-Type": content_type},
-        data=data, timeout=120
-    )
-    resp.raise_for_status()
-    return resp.json()
+    for attempt in range(2):
+        try:
+            resp = sync_requests.put(
+                f"{STORAGE_URL}/objects/{path}",
+                headers={"X-Storage-Key": key, "Content-Type": content_type},
+                data=data, timeout=120
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            if attempt == 1:
+                raise
+            logger.warning(f"Storage upload Versuch {attempt+1} fehlgeschlagen: {e}")
+            # Storage-Key zurücksetzen und neu initialisieren
+            global _storage_key
+            _storage_key = None
+            key = _init_storage()
 
 def _get_object(path: str):
     key = _init_storage()
@@ -2021,18 +2074,40 @@ async def upload_avatar(request: Request, file: UploadFile = File(...), auth=Dep
     if not user or not user.get("member_id"):
         raise HTTPException(status_code=400, detail="Kein Mitgliedsprofil verknüpft")
     
-    allowed = {"image/jpeg", "image/png", "image/webp"}
-    if file.content_type not in allowed:
-        raise HTTPException(status_code=400, detail="Nur JPG, PNG oder WebP erlaubt")
+    # MIME-Type Prüfung (Client-Header)
+    if file.content_type not in AVATAR_ALLOWED_MIMES:
+        raise HTTPException(status_code=400, detail="Nur JPG und PNG Dateien sind erlaubt")
     
     data = await file.read()
-    if len(data) > 5 * 1024 * 1024:
+    
+    # Dateigröße prüfen
+    if len(data) > AVATAR_MAX_SIZE:
         raise HTTPException(status_code=400, detail="Maximale Dateigröße: 5 MB")
     
-    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    path = f"{APP_NAME}/avatars/{user['member_id']}/{uuid.uuid4()}.{ext}"
+    if len(data) == 0:
+        raise HTTPException(status_code=400, detail="Leere Datei")
     
-    _put_object(path, data, file.content_type)
+    # Magic-Bytes Validierung (tatsächlicher Inhalt)
+    try:
+        detected_mime = _validate_image_bytes(data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Bild komprimieren und skalieren
+    try:
+        compressed_data, final_mime = _compress_avatar(data, detected_mime)
+    except Exception as e:
+        logger.error(f"Bildkomprimierung fehlgeschlagen: {e}")
+        raise HTTPException(status_code=400, detail="Bild konnte nicht verarbeitet werden. Bitte ein gültiges JPG oder PNG hochladen.")
+    
+    path = f"{APP_NAME}/avatars/{user['member_id']}/{uuid.uuid4()}.jpg"
+    
+    # Upload mit Fehlerbehandlung
+    try:
+        _put_object(path, compressed_data, final_mime)
+    except Exception as e:
+        logger.error(f"Avatar-Upload fehlgeschlagen: {e}")
+        raise HTTPException(status_code=502, detail="Upload fehlgeschlagen. Bitte später erneut versuchen.")
     
     await db.members.update_one(
         {"id": user["member_id"]},

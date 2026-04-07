@@ -66,12 +66,23 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Nur JPG, PNG oder WebP erlaubt');
+    // Client-seitige MIME-Type Validierung
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast.error('Nur JPG und PNG Dateien sind erlaubt');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
+
+    // Client-seitige Dateigrößen-Validierung
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Maximale Dateigröße: 5 MB');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    if (file.size === 0) {
+      toast.error('Leere Datei');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -81,13 +92,21 @@ const Profile = () => {
       formData.append('file', file);
       const res = await api.post('/profile/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
       });
       toast.success('Profilbild hochgeladen');
       if (res.data.avatar_path) {
         loadAvatar(res.data.avatar_path);
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Fehler beim Hochladen');
+      const detail = err.response?.data?.detail;
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        toast.error('Upload-Zeitüberschreitung. Bitte erneut versuchen.');
+      } else if (detail) {
+        toast.error(detail);
+      } else {
+        toast.error('Upload fehlgeschlagen. Bitte erneut versuchen.');
+      }
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -146,7 +165,7 @@ const Profile = () => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png"
                 className="hidden"
                 onChange={handleAvatarUpload}
               />
