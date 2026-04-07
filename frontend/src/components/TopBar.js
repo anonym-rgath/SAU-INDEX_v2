@@ -71,7 +71,7 @@ const TopBar = () => {
   // Administration sub-items
   const verwaltungItems = [
     { path: '/profile', icon: UserCircle, label: 'Profil' },
-    canManageMembers && { path: '/club-settings', icon: Building2, label: 'Stammdaten' },
+    canManageMembers && { path: '/club-settings', icon: Building2, label: 'Stammdaten des Vereins' },
     canManageMembers && { path: '/roles', icon: ShieldCheck, label: 'Benutzerrollen' },
     canManageMembers && { path: '/members', icon: Users, label: 'Benutzerverwaltung' },
     canManageFineTypes && { path: '/fine-types', icon: Tag, label: 'Strafenarten' },
