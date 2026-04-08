@@ -77,7 +77,7 @@ const TopBar = () => {
     { path: '/club-settings', icon: Building2, label: 'Stammdaten des Vereins' },
     canManageFineTypes && { path: '/fine-types', icon: Tag, label: 'Strafenarten' },
     canManageMembers && { path: '/audit', icon: Shield, label: 'Audit-Log' },
-    { path: '/settings', icon: SlidersHorizontal, label: 'Konsoleneinstellungen' },
+    { path: '/settings', icon: SlidersHorizontal, label: 'Einstellungen' },
   ].filter(Boolean);
 
   const verwaltungPaths = verwaltungItems.map(i => i.path);

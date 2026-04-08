@@ -123,7 +123,7 @@ const Roles = () => {
                 <Row sub label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <Row label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Audit-Log" admin="full" spiess="full" vorstand="full" mitglied="none" />
-                <Row label="Konsoleneinstellungen" admin="full" spiess="full" vorstand="full" mitglied="full" />
+                <Row label="Einstellungen" admin="full" spiess="full" vorstand="full" mitglied="full" />
                 <Row sub label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
 
               </tbody>
