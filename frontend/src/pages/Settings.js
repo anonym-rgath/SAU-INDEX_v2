@@ -5,20 +5,15 @@ import { Label } from '../components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select';
-import { Moon, Languages, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 
-const SettingsSection = ({ icon: Icon, title, description, children }) => (
+const SettingsSection = ({ title, description, children }) => (
   <div data-testid={`settings-section-${title.toLowerCase().replace(/\s/g, '-')}`} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0">
-        <Icon className="w-5 h-5 text-stone-600 dark:text-stone-300" />
-      </div>
-      <div>
-        <h2 className="font-semibold text-stone-900 dark:text-stone-100">{title}</h2>
-        <p className="text-sm text-stone-500 dark:text-stone-400">{description}</p>
-      </div>
+    <div>
+      <h2 className="font-semibold text-stone-900 dark:text-stone-100">{title}</h2>
+      <p className="text-sm text-stone-500 dark:text-stone-400">{description}</p>
     </div>
-    <div className="space-y-4 pl-[52px]">{children}</div>
+    <div className="space-y-4">{children}</div>
   </div>
 );
 
@@ -38,7 +33,7 @@ const Settings = () => {
       </div>
 
       {/* Sprache */}
-      <SettingsSection icon={Languages} title="Sprache" description="Anzeigesprache der Anwendung">
+      <SettingsSection title="Sprache" description="Anzeigesprache der Anwendung">
         <div className="space-y-2">
           <Label>Sprache</Label>
           <Select value={language} onValueChange={setLanguage}>
@@ -55,7 +50,7 @@ const Settings = () => {
       </SettingsSection>
 
       {/* Darstellung */}
-      <SettingsSection icon={Moon} title="Darstellung" description="Erscheinungsbild der Anwendung">
+      <SettingsSection title="Darstellung" description="Erscheinungsbild der Anwendung">
         <div className="flex items-center justify-between">
           <div>
             <Label>Dark Mode</Label>
