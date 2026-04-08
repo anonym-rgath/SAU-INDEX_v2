@@ -6,7 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
-import { Users, Plus, Pencil, Trash2, QrCode, Archive, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Users, Plus, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Select,
@@ -216,12 +216,11 @@ const Members = () => {
         </div>
 
         <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
-          <div className="flex items-center gap-3 mb-1">
-            <Users className="w-5 h-5 text-emerald-700" />
+          <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Alle Mitglieder</h2>
             <span className="text-sm text-stone-500 dark:text-stone-400">({activeMembers.length})</span>
           </div>
-          <p className="text-sm text-stone-500 dark:text-stone-400 mb-4 ml-8">Aktive und passive Vereinsmitglieder</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Aktive und passive Vereinsmitglieder</p>
 
           <div className="space-y-2" data-testid="members-list">
             {activeMembers.length > 0 ? getSortedMembers(activeMembers).map((member) => (
@@ -233,8 +232,7 @@ const Members = () => {
                       {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
                     </span>
                     {member.user_info && (
-                      <Badge className="bg-blue-50 text-blue-700 border-0 text-xs gap-1">
-                        <KeyRound className="w-3 h-3" />
+                      <Badge className="bg-blue-50 text-blue-700 border-0 text-xs">
                         {displayRole(member.user_info.role)}
                       </Badge>
                     )}
@@ -245,11 +243,11 @@ const Members = () => {
                 </div>
                 {canManageMembers && (
                   <div className="flex gap-2 flex-shrink-0 ml-2">
-                    <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100" title="QR-Code">
-                      <QrCode className="w-4 h-4" />
+                    <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 px-3 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 text-xs font-medium" title="QR-Code">
+                      QR
                     </Button>
-                    <Button data-testid={`edit-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600" title="Bearbeiten">
-                      <Pencil className="w-4 h-4" />
+                    <Button data-testid={`edit-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 px-3 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600 text-xs font-medium" title="Bearbeiten">
+                      Bearbeiten
                     </Button>
                   </div>
                 )}
@@ -262,8 +260,7 @@ const Members = () => {
 
         {archivedMembers.length > 0 && (
           <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4 mt-6">
-            <div className="flex items-center gap-3 mb-1">
-              <Archive className="w-5 h-5 text-stone-500 dark:text-stone-400" />
+            <div className="flex items-center gap-2 mb-1">
               <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Archiv</h2>
               <span className="text-sm text-stone-500 dark:text-stone-400">({archivedMembers.length})</span>
             </div>
@@ -279,11 +276,11 @@ const Members = () => {
                   </div>
                   {canManageMembers && (
                     <div className="flex gap-2 flex-shrink-0 ml-2">
-                      <Button data-testid={`edit-archived-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600" title="Bearbeiten">
-                        <Pencil className="w-4 h-4" />
+                      <Button data-testid={`edit-archived-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 px-3 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600 text-xs font-medium" title="Bearbeiten">
+                        Bearbeiten
                       </Button>
-                      <Button data-testid={`delete-archived-member-${member.id}`} onClick={() => { setDeletingMember(member); setDeleteDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100" title="Endgültig löschen">
-                        <Trash2 className="w-4 h-4" />
+                      <Button data-testid={`delete-archived-member-${member.id}`} onClick={() => { setDeletingMember(member); setDeleteDialogOpen(true); }} className="h-10 px-3 rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 text-xs font-medium" title="Endgültig löschen">
+                        Löschen
                       </Button>
                     </div>
                   )}
