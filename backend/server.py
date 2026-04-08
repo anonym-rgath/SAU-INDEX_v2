@@ -1434,9 +1434,10 @@ async def get_fiscal_years(auth=Depends(verify_token)):
     result = await db.fines.aggregate(pipeline).to_list(100)
     fiscal_years = [r['_id'] for r in result if r['_id']]
     
-    # Wenn keine Geschäftsjahre in DB, füge aktuelles hinzu
-    if not fiscal_years:
-        fiscal_years = [get_current_fiscal_year()]
+    # Aktuelles Geschäftsjahr immer einschließen
+    current_fy = get_current_fiscal_year()
+    if current_fy not in fiscal_years:
+        fiscal_years.insert(0, current_fy)
     
     return {"fiscal_years": fiscal_years}
 
@@ -1992,7 +1993,26 @@ async def update_club_settings(input: ClubSettingsUpdate, request: Request, auth
         update_data["fiscal_year_start_month"] = input.fiscal_year_start_month
         # Globale Variable aktualisieren
         global FISCAL_YEAR_START_MONTH
+        old_month = FISCAL_YEAR_START_MONTH
         FISCAL_YEAR_START_MONTH = input.fiscal_year_start_month
+        
+        # Alle Strafen neu berechnen wenn Startmonat geändert
+        if old_month != input.fiscal_year_start_month:
+            all_fines = await db.fines.find({}, {"_id": 1, "date": 1}).to_list(50000)
+            bulk_ops = []
+            for fine in all_fines:
+                try:
+                    d = fine.get('date')
+                    if isinstance(d, str):
+                        d = datetime.fromisoformat(d.replace('Z', '+00:00'))
+                    new_fy = get_fiscal_year(d)
+                    bulk_ops.append({"filter": {"_id": fine["_id"]}, "update": {"$set": {"fiscal_year": new_fy}}})
+                except Exception:
+                    continue
+            if bulk_ops:
+                from pymongo import UpdateOne
+                await db.fines.bulk_write([UpdateOne(op["filter"], op["update"]) for op in bulk_ops])
+                logger.info(f"Geschäftsjahr neu berechnet für {len(bulk_ops)} Strafen (Monat: {old_month} → {input.fiscal_year_start_month})")
     
     if not update_data:
         raise HTTPException(status_code=400, detail="Keine Änderungen")
