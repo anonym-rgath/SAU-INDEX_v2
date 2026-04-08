@@ -158,7 +158,7 @@ const ClubSettings = () => {
             value={foundingDate}
             onChange={e => setFoundingDate(e.target.value)}
             disabled={!canEdit}
-            className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-left focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           />
           {canEdit && (
             <Button data-testid="save-founding-date-button" onClick={handleSaveFoundingDate} disabled={savingFoundingDate} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
