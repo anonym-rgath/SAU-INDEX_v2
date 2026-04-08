@@ -75,7 +75,8 @@ const Roles = () => {
 
         {/* Berechtigungsmatrix */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6">
-          <h2 className="font-semibold text-stone-900 dark:text-stone-100 mb-4">Berechtigungsmatrix</h2>
+          <h2 className="font-semibold text-stone-900 dark:text-stone-100">Berechtigungsmatrix</h2>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Detaillierte Übersicht aller Berechtigungen je Rolle</p>
           <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-700">
             <table className="w-full text-xs" data-testid="permissions-matrix">
               <thead>
