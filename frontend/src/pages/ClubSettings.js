@@ -24,7 +24,7 @@ const MONTHS = [
 ];
 
 const Section = ({ icon: Icon, title, description, children }) => (
-  <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
+  <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-5 sm:p-6 space-y-4">
     <div className="flex items-start gap-3">
       <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0">
         <Icon className="w-5 h-5 text-stone-600 dark:text-stone-300" />
@@ -34,7 +34,7 @@ const Section = ({ icon: Icon, title, description, children }) => (
         <p className="text-sm text-stone-500 dark:text-stone-400">{description}</p>
       </div>
     </div>
-    <div className="space-y-4 pl-[52px]">{children}</div>
+    <div className="space-y-4">{children}</div>
   </div>
 );
 
@@ -204,7 +204,7 @@ const ClubSettings = () => {
           <div className="bg-stone-50 dark:bg-stone-800 rounded-xl p-3">
             <p className="text-xs text-stone-500 dark:text-stone-400">Letzte Synchronisation: <strong>{lastSync ? new Date(lastSync).toLocaleString('de-DE') : 'Noch nie'}</strong></p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button data-testid="settings-ics-save-button" onClick={handleSaveIcs} disabled={icsSaving} className="h-10 px-6 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 transition-transform active:scale-95">
               <Save className="w-4 h-4 mr-1.5" />{icsSaving ? 'Speichert...' : 'Speichern'}
             </Button>
