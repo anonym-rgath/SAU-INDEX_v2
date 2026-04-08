@@ -5,7 +5,7 @@ import { Label } from '../components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select';
-import { Moon, Languages } from 'lucide-react';
+import { Moon, Languages, SlidersHorizontal } from 'lucide-react';
 
 const SettingsSection = ({ icon: Icon, title, description, children }) => (
   <div data-testid={`settings-section-${title.toLowerCase().replace(/\s/g, '-')}`} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
@@ -30,7 +30,10 @@ const Settings = () => {
     <div data-testid="settings-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Konsoleneinstellungen</h1>
+        <div className="flex items-center gap-3">
+          <SlidersHorizontal className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
+          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Einstellungen</h1>
+        </div>
         <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">App-Konfiguration und Darstellung</p>
       </div>
 
