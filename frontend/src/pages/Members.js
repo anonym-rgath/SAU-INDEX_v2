@@ -6,7 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
-import { Users, Plus, Pencil, Trash2, QrCode, Eye, EyeOff } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2, QrCode, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Select,
@@ -48,8 +48,18 @@ const Members = () => {
   const [qrMember, setQrMember] = useState(null);
   const [editingMember, setEditingMember] = useState(null);
   const [deletingMember, setDeletingMember] = useState(null);
-  const [sortBy, setSortBy] = useState('name-asc');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
   const [showPassword, setShowPassword] = useState(false);
+
+  const toggleSort = (field) => {
+    if (sortBy === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDir('asc');
+    }
+  };
 
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', status: 'aktiv',
@@ -168,15 +178,27 @@ const Members = () => {
 
   const getSortedMembers = (list) => {
     const sorted = [...list];
+    const dir = sortDir === 'asc' ? 1 : -1;
     switch (sortBy) {
-      case 'name-asc': return sorted.sort((a, b) => getFullName(a).localeCompare(getFullName(b)));
-      case 'name-desc': return sorted.sort((a, b) => getFullName(b).localeCompare(getFullName(a)));
-      case 'status-aktiv': return sorted.sort((a, b) => (a.status === 'aktiv' ? -1 : 1) || getFullName(a).localeCompare(getFullName(b)));
-      case 'status-passiv': return sorted.sort((a, b) => (a.status === 'passiv' ? -1 : 1) || getFullName(a).localeCompare(getFullName(b)));
-      case 'date-newest': return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      case 'date-oldest': return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      case 'name':
+        return sorted.sort((a, b) => dir * getFullName(a).localeCompare(getFullName(b)));
+      case 'status':
+        return sorted.sort((a, b) => dir * (a.status || '').localeCompare(b.status || '') || getFullName(a).localeCompare(getFullName(b)));
+      case 'rolle':
+        return sorted.sort((a, b) => {
+          const rA = a.user_info?.role || '';
+          const rB = b.user_info?.role || '';
+          return dir * rA.localeCompare(rB) || getFullName(a).localeCompare(getFullName(b));
+        });
       default: return sorted;
     }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortBy !== field) return null;
+    return sortDir === 'asc' 
+      ? <ChevronUp className="w-3 h-3 inline ml-0.5" /> 
+      : <ChevronDown className="w-3 h-3 inline ml-0.5" />;
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="text-stone-500 dark:text-stone-400">Laden...</div></div>;
@@ -199,22 +221,6 @@ const Members = () => {
           )}
         </div>
 
-        <div className="mb-4">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger data-testid="sort-members-select" className="h-11 rounded-xl max-w-xs">
-              <SelectValue placeholder="Sortieren nach..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-              <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-              <SelectItem value="status-aktiv">Status: Aktiv zuerst</SelectItem>
-              <SelectItem value="status-passiv">Status: Passiv zuerst</SelectItem>
-              <SelectItem value="date-newest">Neueste zuerst</SelectItem>
-              <SelectItem value="date-oldest">Älteste zuerst</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Alle Mitglieder</h2>
@@ -224,9 +230,15 @@ const Members = () => {
 
           {/* Spaltenköpfe */}
           <div className="flex items-center px-4 py-2 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">
-            <div className="flex-1 min-w-0">Name</div>
-            <div className="w-20 text-center hidden sm:block">Status</div>
-            <div className="w-24 text-center hidden sm:block">Rolle</div>
+            <div className="flex-1 min-w-0 cursor-pointer select-none hover:text-stone-600 dark:hover:text-stone-300 transition-colors" onClick={() => toggleSort('name')}>
+              Name <SortIcon field="name" />
+            </div>
+            <div className="w-20 text-center hidden sm:block cursor-pointer select-none hover:text-stone-600 dark:hover:text-stone-300 transition-colors" onClick={() => toggleSort('status')}>
+              Status <SortIcon field="status" />
+            </div>
+            <div className="w-24 text-center hidden sm:block cursor-pointer select-none hover:text-stone-600 dark:hover:text-stone-300 transition-colors" onClick={() => toggleSort('rolle')}>
+              Rolle <SortIcon field="rolle" />
+            </div>
             {canManageMembers && <div className="w-24 text-right flex-shrink-0">Aktionen</div>}
           </div>
 
@@ -290,7 +302,7 @@ const Members = () => {
             </div>
             <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Ausgetretene Mitglieder (erscheinen nicht in Rankings)</p>
             <div className="space-y-2" data-testid="archived-members-list">
-              {archivedMembers.map((member) => (
+              {[...archivedMembers].sort((a, b) => (a.lastName || '').localeCompare(b.lastName || '')).map((member) => (
                 <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-100/50 dark:bg-stone-800/50 min-h-[72px] opacity-75" data-testid={`archived-member-item-${member.id}`}>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
