@@ -1,5 +1,4 @@
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
 
 const permIcon = (level) => {
   switch (level) {
@@ -59,16 +58,11 @@ const Roles = () => {
 
         {/* Rollenbeschreibungen */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-stone-600 dark:text-stone-300" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-stone-900 dark:text-stone-100">Verfügbare Rollen</h2>
-              <p className="text-sm text-stone-500 dark:text-stone-400">Jede Rolle bestimmt den Funktionsumfang in der App</p>
-            </div>
+          <div>
+            <h2 className="font-semibold text-stone-900 dark:text-stone-100">Verfügbare Rollen</h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400">Jede Rolle bestimmt den Funktionsumfang in der App</p>
           </div>
-          <div className="space-y-3 pl-[52px]">
+          <div className="space-y-3">
             {ROLES.map(r => (
               <div key={r.role} className={`rounded-xl border p-3 ${r.color}`}>
                 <p className="font-semibold text-sm">{r.role}</p>
