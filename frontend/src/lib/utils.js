@@ -18,3 +18,14 @@ export function formatDate(date) {
     timeStyle: 'short'
   }).format(new Date(date));
 }
+
+const ROLE_LABELS = {
+  admin: 'Admin',
+  spiess: 'Spieß',
+  vorstand: 'Vorstand',
+  mitglied: 'Mitglied',
+};
+
+export function displayRole(role) {
+  return ROLE_LABELS[role] || role;
+}

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle, Building2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { displayRole } from '../lib/utils';
 import { cn } from '../lib/utils';
 import { api } from '../lib/api';
 import ChangePasswordDialog from './ChangePasswordDialog';
@@ -244,8 +245,8 @@ const TopBar = () => {
                 <p className="font-semibold text-stone-900 dark:text-stone-100 truncate capitalize" data-testid="drawer-username">
                   {user?.username}
                 </p>
-                <p className="text-xs text-stone-500 dark:text-stone-400 capitalize">
-                  {user?.role}
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  {displayRole(user?.role)}
                 </p>
               </div>
             </div>

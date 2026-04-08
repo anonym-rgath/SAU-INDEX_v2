@@ -34,13 +34,8 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { useAuth } from '../contexts/AuthContext';
+import { displayRole } from '../lib/utils';
 import QRCodeDialog from '../components/QRCodeDialog';
-
-const ROLE_LABELS = {
-  spiess: 'Spieß',
-  vorstand: 'Vorstand',
-  mitglied: 'Mitglied',
-};
 
 const Members = () => {
   const { canManageMembers, isAdmin, isSpiess, isVorstand } = useAuth();
@@ -237,7 +232,7 @@ const Members = () => {
                     {member.user_info && (
                       <Badge className="bg-blue-50 text-blue-700 border-0 text-xs gap-1">
                         <KeyRound className="w-3 h-3" />
-                        {ROLE_LABELS[member.user_info.role] || member.user_info.role}
+                        {displayRole(member.user_info.role)}
                       </Badge>
                     )}
                   </div>

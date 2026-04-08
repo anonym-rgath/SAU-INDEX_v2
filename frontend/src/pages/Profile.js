@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { Camera, Save, User } from 'lucide-react';
 import { api } from '../lib/api';
+import { displayRole } from '../lib/utils';
 
 const CONFESSIONS = ['Römisch-Katholisch', 'Evangelisch', 'Ohne Konfession', 'Sonstige'];
 
@@ -285,7 +286,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-stone-500 dark:text-stone-400">Rolle</p>
-                    <p className="font-medium text-stone-900 dark:text-stone-100 capitalize">{profile?.role}</p>
+                    <p className="font-medium text-stone-900 dark:text-stone-100">{displayRole(profile?.role)}</p>
                   </div>
                   {profile?.status && (
                     <div>
