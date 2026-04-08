@@ -124,9 +124,12 @@ const FineTypes = () => {
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
-              Strafenkatalog
-            </h1>
+            <div className="flex items-center gap-3">
+              <Tag className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
+              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
+                Strafenkatalog
+              </h1>
+            </div>
             <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
               Alle verfügbaren Strafenarten
             </p>
@@ -145,13 +148,6 @@ const FineTypes = () => {
         </div>
 
         <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Tag className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
-            <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
-              Alle Strafenarten
-            </h2>
-          </div>
-
           <div className="space-y-2" data-testid="finetypes-list">
             {fineTypes.length > 0 ? (
               fineTypes.map((fineType) => (
