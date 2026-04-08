@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { Pencil, Trash2, Receipt, Plus } from 'lucide-react';
+import { Pencil, Trash2, Receipt, Plus, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -128,6 +128,7 @@ const Fines = () => {
               Strafenübersicht
             </h1>
             <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-full px-3 h-10 shadow-sm">
+              <Calendar className="w-4 h-4 text-stone-400" />
               <select
                 data-testid="fines-fiscal-year-selector"
                 value={fiscalYear}
