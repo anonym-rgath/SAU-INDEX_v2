@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { Pencil, Trash2, Receipt, Plus, Calendar } from 'lucide-react';
+import { Pencil, Trash2, Plus, Calendar, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -25,7 +25,9 @@ const Fines = () => {
   const [fiscalYear, setFiscalYear] = useState('');
   const [fiscalYears, setFiscalYears] = useState([]);
   const [fines, setFines] = useState([]);
+  const [createdByMeFines, setCreatedByMeFines] = useState([]);
   const [members, setMembers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -70,6 +72,14 @@ const Fines = () => {
       
       setFines(finesRes.data);
       setMembers(membersRes.data);
+      
+      // Vorstand: erstellte Strafen laden
+      if (isVorstand) {
+        try {
+          const createdRes = await api.fines.getCreatedByMe(fiscalYear);
+          setCreatedByMeFines(createdRes.data);
+        } catch { setCreatedByMeFines([]); }
+      }
     } catch (error) {
       console.error('Fehler beim Laden der Daten:', error);
       if (error?.code !== 'ERR_CANCELED') {
@@ -111,6 +121,14 @@ const Fines = () => {
     return member.name || 'Unbekannt';
   };
 
+  const filteredFines = fines.filter(fine => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const name = getMemberName(fine.member_id).toLowerCase();
+    const type = (fine.fine_type_label || '').toLowerCase();
+    return name.includes(q) || type.includes(q);
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -143,7 +161,7 @@ const Fines = () => {
           </div>
           <div className="flex items-center justify-between mt-1">
             <p className="text-sm text-stone-500">
-              {isMitglied ? 'Meine Strafeinträge' : isVorstand ? 'Strafen von Spieß & Vorstand' : 'Alle Strafeinträge'}
+              {isMitglied ? 'Meine Strafeinträge' : isVorstand ? 'Meine Strafeinträge' : 'Alle Strafeinträge'}
             </p>
             {canCreateFines && (
               <Button
@@ -156,6 +174,20 @@ const Fines = () => {
               </Button>
             )}
           </div>
+          {/* Suchfeld für Admin und Spieß */}
+          {canManageFines && (
+            <div className="relative mt-3">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                data-testid="fines-search"
+                type="text"
+                placeholder="Suche nach Name oder Strafenart..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 pl-9 pr-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
+          )}
         </div>
 
         <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
@@ -166,8 +198,8 @@ const Fines = () => {
           </div>
 
           <div className="space-y-2" data-testid="fines-list">
-            {fines.length > 0 ? (
-              fines.map((fine) => (
+            {filteredFines.length > 0 ? (
+              filteredFines.map((fine) => (
                 <div
                   key={fine.id}
                   className="flex items-start justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 active:bg-stone-100 transition-colors"
@@ -214,11 +246,45 @@ const Fines = () => {
               ))
             ) : (
               <p className="text-center text-stone-400 py-8">
-                Noch keine Strafen für {fiscalYear}
+                {searchQuery ? 'Keine Treffer' : `Noch keine Strafen für ${fiscalYear}`}
               </p>
             )}
           </div>
         </Card>
+
+        {/* Vorstand: Von mir erstellte Strafen */}
+        {isVorstand && createdByMeFines.length > 0 && (
+          <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4 mt-4">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
+                Von mir erstellte Strafen
+              </h2>
+              <p className="text-xs text-stone-500 mt-0.5">{createdByMeFines.length} Einträge im {fiscalYear}</p>
+            </div>
+            <div className="space-y-2" data-testid="created-by-me-fines-list">
+              {createdByMeFines.map((fine) => (
+                <div
+                  key={fine.id}
+                  className="flex items-start justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
+                  data-testid={`created-fine-${fine.id}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-bold text-stone-900 truncate">
+                        {fine.member_name || getMemberName(fine.member_id)}
+                      </p>
+                      <span className="text-emerald-700 font-bold whitespace-nowrap">
+                        {formatCurrency(fine.amount)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-stone-600 truncate">{fine.fine_type_label}</p>
+                    <p className="text-xs text-stone-400 mt-1">{formatDate(fine.date)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
 
       {editingFine && (

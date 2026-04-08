@@ -235,6 +235,7 @@ class Fine(BaseModel):
     fiscal_year: str  # z.B. "2025/2026"
     date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     notes: Optional[str] = None
+    created_by: Optional[str] = None
 
 class FineCreate(BaseModel):
     member_id: str
@@ -1200,20 +1201,42 @@ async def get_fines(fiscal_year: Optional[str] = None, auth=Depends(require_auth
             return []
         query["member_id"] = member_id
     elif role == 'vorstand':
-        # Vorstand sieht Strafen von Spieß/Vorstand-verknüpften Mitgliedern
-        eligible_ids = await _get_vorstand_eligible_member_ids()
-        if member_id and member_id not in eligible_ids:
-            eligible_ids.append(member_id)
-        if eligible_ids:
-            query["member_id"] = {"$in": eligible_ids}
-        else:
+        # Vorstand sieht nur eigene Strafen
+        if not member_id:
             return []
+        query["member_id"] = member_id
     
     fines = await db.fines.find(query, {"_id": 0}).sort("date", -1).to_list(5000)
     for fine in fines:
         if isinstance(fine.get('date'), str):
             fine['date'] = datetime.fromisoformat(fine['date'])
     return fines
+
+@api_router.get("/fines/created-by-me")
+async def get_fines_created_by_me(fiscal_year: Optional[str] = None, auth=Depends(require_any_role)):
+    """Gibt Strafen zurück, die vom aktuellen Benutzer erstellt wurden."""
+    username = auth.get('username')
+    query = {"created_by": username}
+    if fiscal_year:
+        query["fiscal_year"] = fiscal_year
+    
+    fines = await db.fines.find(query, {"_id": 0}).sort("date", -1).to_list(5000)
+    
+    # Member-Namen hinzufügen
+    member_ids = list(set(f.get("member_id") for f in fines if f.get("member_id")))
+    members = {}
+    if member_ids:
+        member_docs = await db.members.find({"id": {"$in": member_ids}}, {"_id": 0, "id": 1, "firstName": 1, "lastName": 1}).to_list(5000)
+        members = {m["id"]: f"{m.get('firstName', '')} {m.get('lastName', '')}".strip() for m in member_docs}
+    
+    result = []
+    for fine in fines:
+        if isinstance(fine.get('date'), str):
+            fine['date'] = datetime.fromisoformat(fine['date'])
+        fine['member_name'] = members.get(fine.get('member_id'), 'Unbekannt')
+        result.append(fine)
+    return result
+
 
 @api_router.post("/fines", response_model=Fine)
 async def create_fine(input: FineCreate, auth=Depends(require_any_role)):
@@ -1250,6 +1273,7 @@ async def create_fine(input: FineCreate, auth=Depends(require_any_role)):
     
     fine_data['date'] = fine_date
     fine_data['fiscal_year'] = get_fiscal_year(fine_date)
+    fine_data['created_by'] = auth.get('username')
     
     fine = Fine(**fine_data)
     doc = fine.model_dump()
