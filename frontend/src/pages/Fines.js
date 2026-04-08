@@ -122,27 +122,11 @@ const Fines = () => {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
             <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
               Strafenübersicht
             </h1>
-            <p className="text-sm text-stone-500 mt-1">
-              {isMitglied ? 'Meine Strafeinträge' : isVorstand ? 'Strafen von Spieß & Vorstand' : 'Alle Strafeinträge'}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {canCreateFines && (
-              <Button
-                data-testid="add-fine-button"
-                onClick={() => setAddDialogOpen(true)}
-                className="h-10 px-4 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Strafe
-              </Button>
-            )}
             <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-full px-3 h-10 shadow-sm">
               <select
                 data-testid="fines-fiscal-year-selector"
@@ -155,6 +139,21 @@ const Fines = () => {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-sm text-stone-500">
+              {isMitglied ? 'Meine Strafeinträge' : isVorstand ? 'Strafen von Spieß & Vorstand' : 'Alle Strafeinträge'}
+            </p>
+            {canCreateFines && (
+              <Button
+                data-testid="add-fine-button"
+                onClick={() => setAddDialogOpen(true)}
+                className="h-10 px-4 rounded-full bg-emerald-700 text-white font-medium hover:bg-emerald-800 shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Strafe
+              </Button>
+            )}
           </div>
         </div>
 
