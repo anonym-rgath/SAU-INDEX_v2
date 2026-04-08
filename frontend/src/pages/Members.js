@@ -222,12 +222,24 @@ const Members = () => {
           </div>
           <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Aktive und passive Vereinsmitglieder</p>
 
+          {/* Spaltenköpfe */}
+          <div className="flex items-center px-4 py-2 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">
+            <div className="flex-1 min-w-0">Name</div>
+            <div className="w-20 text-center hidden sm:block">Status</div>
+            <div className="w-24 text-center hidden sm:block">Rolle</div>
+            {canManageMembers && <div className="w-24 text-right flex-shrink-0">Aktionen</div>}
+          </div>
+
           <div className="space-y-2" data-testid="members-list">
             {activeMembers.length > 0 ? getSortedMembers(activeMembers).map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 transition-colors min-h-[72px]" data-testid={`member-item-${member.id}`}>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-stone-900 dark:text-stone-100">{getFullName(member)}</p>
+              <div key={member.id} className="flex items-center p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 transition-colors min-h-[56px]" data-testid={`member-item-${member.id}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-stone-900 dark:text-stone-100">{getFullName(member)}</p>
+                  {member.user_info && (
+                    <p className="text-xs text-stone-400 mt-0.5">Login: {member.user_info.username}</p>
+                  )}
+                  {/* Mobile: Status + Rolle inline */}
+                  <div className="flex items-center gap-2 mt-1 sm:hidden">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${member.status === 'aktiv' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'}`}>
                       {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
                     </span>
@@ -237,12 +249,24 @@ const Members = () => {
                       </Badge>
                     )}
                   </div>
-                  {member.user_info && (
-                    <p className="text-xs text-stone-400 mt-0.5">Login: {member.user_info.username}</p>
+                </div>
+                {/* Desktop: Status + Rolle als Spalten */}
+                <div className="w-20 text-center hidden sm:flex justify-center">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${member.status === 'aktiv' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'}`}>
+                    {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
+                  </span>
+                </div>
+                <div className="w-24 text-center hidden sm:flex justify-center">
+                  {member.user_info ? (
+                    <Badge className="bg-blue-50 text-blue-700 border-0 text-xs">
+                      {displayRole(member.user_info.role)}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-stone-300 dark:text-stone-600">–</span>
                   )}
                 </div>
                 {canManageMembers && (
-                  <div className="flex gap-2 flex-shrink-0 ml-2">
+                  <div className="flex gap-2 flex-shrink-0 ml-2 w-24 justify-end">
                     <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100" title="QR-Code">
                       <QrCode className="w-4 h-4" />
                     </Button>
