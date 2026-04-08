@@ -108,7 +108,7 @@ const Roles = () => {
                 <Row label="Zugriff" admin="full" spiess="full" vorstand="own" mitglied="own" />
                 <Row sub label="Alle Strafen einsehen" admin="yes" spiess="yes" vorstand="no" mitglied="no" />
                 <Row sub label="Eigene Strafen einsehen" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />
-                <Row sub label="Strafen erstellen" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
+                <Row sub label="Strafen erstellen" admin="yes" spiess="yes" vorstand="own" mitglied="no" />
 
                 {/* Statistiken */}
                 <Section label="Statistiken (Erweitert)" />
