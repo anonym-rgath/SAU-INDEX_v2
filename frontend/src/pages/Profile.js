@@ -193,7 +193,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Name + Status */}
+              {/* Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Vorname</label>
@@ -204,16 +204,6 @@ const Profile = () => {
                   <Input data-testid="profile-lastname-input" value={form.lastName} onChange={(e) => setForm(p => ({ ...p, lastName: e.target.value }))} placeholder="Nachname" />
                 </div>
               </div>
-
-              {/* Status (read-only) */}
-              {profile?.status && (
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Status</label>
-                  <span data-testid="profile-status-badge" className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColor[profile.status] || ''}`}>
-                    {statusLabel[profile.status] || profile.status}
-                  </span>
-                </div>
-              )}
 
               {/* Geburtstag */}
               <div>
@@ -297,6 +287,14 @@ const Profile = () => {
                     <p className="text-stone-500 dark:text-stone-400">Rolle</p>
                     <p className="font-medium text-stone-900 dark:text-stone-100 capitalize">{profile?.role}</p>
                   </div>
+                  {profile?.status && (
+                    <div>
+                      <p className="text-stone-500 dark:text-stone-400">Status</p>
+                      <span data-testid="profile-status-badge" className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColor[profile.status] || ''}`}>
+                        {statusLabel[profile.status] || profile.status}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
