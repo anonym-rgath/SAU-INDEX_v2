@@ -239,18 +239,13 @@ const Dashboard = () => {
             <>
               {/* Meine Strafen */}
               <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
+                <div className="mb-3">
                     <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">Meine Strafen</h3>
                     <p className="text-xs text-stone-500 dark:text-stone-400">
                       {formatCurrency(personalStats?.total_amount || 0)} gesamt
                       <span className="mx-1.5 text-stone-300 dark:text-stone-600">|</span>
                       {personalStats?.total_fines || 0} Einträge
                     </p>
-                  </div>
-                  <div className="bg-emerald-100 dark:bg-emerald-900/40 p-2 rounded-lg">
-                    <Wallet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  </div>
                 </div>
 
                 <div className="space-y-2" data-testid="my-fines-list">
