@@ -16,7 +16,7 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [avatarBlobUrl, setAvatarBlobUrl] = useState(null);
   const [form, setForm] = useState({
-    firstName: '', lastName: '', birthday: '', joinDate: '',
+    firstName: '', lastName: '', birthday: '', joinDate: '', joinDateCorps: '',
     street: '', zipCode: '', city: '', confession: '', email: '',
   });
   const fileInputRef = useRef(null);
@@ -35,6 +35,7 @@ const Profile = () => {
         lastName: res.data.lastName || '',
         birthday: res.data.birthday || '',
         joinDate: res.data.joinDate || '',
+        joinDateCorps: res.data.joinDateCorps || '',
         street: res.data.street || '',
         zipCode: res.data.zipCode || '',
         city: res.data.city || '',
@@ -121,14 +122,12 @@ const Profile = () => {
     return (f + l).toUpperCase() || '?';
   };
 
-  const getMemberYears = () => {
-    if (!form.joinDate) return null;
-    const join = new Date(form.joinDate);
+  const calcYears = (dateStr) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
     const now = new Date();
-    let years = now.getFullYear() - join.getFullYear();
-    if (now.getMonth() < join.getMonth() || (now.getMonth() === join.getMonth() && now.getDate() < join.getDate())) {
-      years--;
-    }
+    let years = now.getFullYear() - d.getFullYear();
+    if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) years--;
     return years >= 0 ? years : 0;
   };
 
@@ -137,7 +136,10 @@ const Profile = () => {
   }
 
   const noMember = !profile?.member_id;
-  const memberYears = getMemberYears();
+  const memberYears = calcYears(form.joinDate);
+  const corpsYears = calcYears(form.joinDateCorps);
+  const statusLabel = { aktiv: 'Aktiv', passiv: 'Passiv', archiviert: 'Archiviert' };
+  const statusColor = { aktiv: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400', passiv: 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400', archiviert: 'bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500' };
 
   return (
     <div data-testid="profile-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
@@ -191,7 +193,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Name */}
+              {/* Name + Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Vorname</label>
@@ -203,18 +205,39 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Geburtstag + Eintrittsdatum */}
+              {/* Status (read-only) */}
+              {profile?.status && (
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Status</label>
+                  <span data-testid="profile-status-badge" className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColor[profile.status] || ''}`}>
+                    {statusLabel[profile.status] || profile.status}
+                  </span>
+                </div>
+              )}
+
+              {/* Geburtstag */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Geburtstag</label>
+                <Input data-testid="profile-birthday-input" type="date" value={form.birthday} onChange={(e) => setForm(p => ({ ...p, birthday: e.target.value }))} />
+              </div>
+
+              {/* Eintrittsdatum (Verein) + Eintrittsdatum (Corps) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Geburtstag</label>
-                  <Input data-testid="profile-birthday-input" type="date" value={form.birthday} onChange={(e) => setForm(p => ({ ...p, birthday: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Eintrittsdatum</label>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Eintrittsdatum (Verein)</label>
                   <Input data-testid="profile-joindate-input" type="date" value={form.joinDate} onChange={(e) => setForm(p => ({ ...p, joinDate: e.target.value }))} />
                   {memberYears !== null && (
                     <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
                       Mitglied seit {memberYears} {memberYears === 1 ? 'Jahr' : 'Jahren'}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Eintrittsdatum (Corps)</label>
+                  <Input data-testid="profile-joindate-corps-input" type="date" value={form.joinDateCorps} onChange={(e) => setForm(p => ({ ...p, joinDateCorps: e.target.value }))} />
+                  {corpsYears !== null && (
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
+                      Im Corps seit {corpsYears} {corpsYears === 1 ? 'Jahr' : 'Jahren'}
                     </p>
                   )}
                 </div>

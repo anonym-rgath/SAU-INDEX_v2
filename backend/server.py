@@ -317,6 +317,7 @@ class ProfileUpdate(BaseModel):
     lastName: Optional[str] = None
     birthday: Optional[str] = None
     joinDate: Optional[str] = None
+    joinDateCorps: Optional[str] = None
     street: Optional[str] = None
     zipCode: Optional[str] = None
     city: Optional[str] = None
@@ -2050,11 +2051,13 @@ async def get_profile(auth=Depends(verify_token)):
         "lastName": None,
         "birthday": None,
         "joinDate": None,
+        "joinDateCorps": None,
         "street": None,
         "zipCode": None,
         "city": None,
         "confession": None,
         "email": None,
+        "status": None,
         "avatar_path": None,
     }
     
@@ -2065,11 +2068,13 @@ async def get_profile(auth=Depends(verify_token)):
             profile["lastName"] = member.get("lastName")
             profile["birthday"] = member.get("birthday")
             profile["joinDate"] = member.get("joinDate")
+            profile["joinDateCorps"] = member.get("joinDateCorps")
             profile["street"] = member.get("street")
             profile["zipCode"] = member.get("zipCode")
             profile["city"] = member.get("city")
             profile["confession"] = member.get("confession")
             profile["email"] = member.get("email")
+            profile["status"] = member.get("status")
             profile["avatar_path"] = member.get("avatar_path")
             profile["member_id"] = member["id"]
     
@@ -2093,6 +2098,8 @@ async def update_profile(data: ProfileUpdate, request: Request, auth=Depends(ver
         update["birthday"] = data.birthday if data.birthday else None
     if data.joinDate is not None:
         update["joinDate"] = data.joinDate if data.joinDate else None
+    if data.joinDateCorps is not None:
+        update["joinDateCorps"] = data.joinDateCorps if data.joinDateCorps else None
     if data.street is not None:
         update["street"] = data.street.strip()
     if data.zipCode is not None:
