@@ -159,8 +159,7 @@ const Fines = () => {
         </div>
 
         <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Receipt className="w-5 h-5 text-emerald-700" />
+          <div className="mb-4">
             <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
               Strafen {fiscalYear}
             </h2>
