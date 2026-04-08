@@ -270,6 +270,37 @@ const Dashboard = () => {
 
               {/* Verlauf */}
               <PersonalMonthlyChart fines={myFines} />
+
+              {/* Finanzdaten */}
+              <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-4" data-testid="finanzdaten-card">
+                <div className="mb-3">
+                  <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">Finanzdaten</h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">Beiträge und Sparguthaben</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+                    <div>
+                      <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">Offene Beiträge</p>
+                      <p className="text-xs text-stone-400 dark:text-stone-500">Aktuell noch zu zahlende Beiträge</p>
+                    </div>
+                    <span className="text-stone-700 dark:text-stone-300 font-bold text-sm" data-testid="offene-beitraege">{formatCurrency(0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+                    <div>
+                      <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">Gezahlte Beiträge</p>
+                      <p className="text-xs text-stone-400 dark:text-stone-500">Bereits gezahlte Beiträge</p>
+                    </div>
+                    <span className="text-emerald-700 dark:text-emerald-400 font-bold text-sm" data-testid="gezahlte-beitraege">{formatCurrency(0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
+                    <div>
+                      <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">Sparbetrag</p>
+                      <p className="text-xs text-stone-400 dark:text-stone-500">Aktuell angesparter Betrag</p>
+                    </div>
+                    <span className="text-stone-700 dark:text-stone-300 font-bold text-sm" data-testid="sparbetrag">{formatCurrency(0)}</span>
+                  </div>
+                </div>
+              </Card>
             </>
           ) : (
             <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm p-6">
