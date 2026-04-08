@@ -1176,14 +1176,19 @@ async def _get_vorstand_eligible_member_ids():
 async def get_eligible_members_for_fines(auth=Depends(require_any_role)):
     """Gibt die Mitglieder zurück, für die der aktuelle Benutzer Strafen erstellen darf."""
     role = auth.get('role')
+    own_member_id = auth.get('member_id')
     active_members = await db.members.find({"status": {"$ne": "archiviert"}}, {"_id": 0}).to_list(5000)
     
     if role in ['admin', 'spiess']:
+        # Spieß: sich selbst ausfiltern
+        if role == 'spiess' and own_member_id:
+            return [m for m in active_members if m.get("id") != own_member_id]
         return active_members
     
     if role == 'vorstand':
         eligible_ids = await _get_vorstand_eligible_member_ids()
-        return [m for m in active_members if m.get("id") in eligible_ids]
+        # Vorstand: sich selbst ausfiltern
+        return [m for m in active_members if m.get("id") in eligible_ids and m.get("id") != own_member_id]
     
     return []
 
@@ -1254,6 +1259,12 @@ async def create_fine(input: FineCreate, auth=Depends(require_any_role)):
     
     # Vorstand darf nur Strafen für Spieß/Vorstand-verknüpfte Mitglieder erstellen
     role = auth.get('role')
+    own_member_id = auth.get('member_id')
+    
+    # Spieß und Vorstand dürfen sich selbst keine Strafen zuordnen
+    if role in ['spiess', 'vorstand'] and own_member_id and input.member_id == own_member_id:
+        raise HTTPException(status_code=403, detail="Du kannst dir selbst keine Strafe zuordnen")
+    
     if role == 'vorstand':
         eligible_ids = await _get_vorstand_eligible_member_ids()
         if input.member_id not in eligible_ids:
