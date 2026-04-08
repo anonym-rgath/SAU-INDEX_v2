@@ -193,8 +193,8 @@ const ClubSettings = () => {
         {/* ICS-Kalender - nur für Admin/Spieß/Vorstand */}
         {canEdit && (
         <Section icon={Globe} title="ICS-Kalender" description="Externen Kalender per ICS-URL abonnieren">
-          <div className="space-y-2">
-            <Label>ICS-URL</Label>
+          <div>
+            <Label className="mb-1.5 block">ICS-URL</Label>
             <Input data-testid="settings-ics-url-input" value={icsUrl} onChange={(e) => setIcsUrl(e.target.value)} placeholder="https://outlook.live.com/.../calendar.ics" className="h-12 rounded-xl border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 text-sm" />
           </div>
           <div className="flex items-center justify-between">
