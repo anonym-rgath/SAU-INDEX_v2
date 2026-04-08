@@ -122,7 +122,7 @@ const Roles = () => {
                 <Row sub label="App-Zugang verwalten" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
                 <Row label="Stammdaten des Vereins" admin="full" spiess="full" vorstand="full" mitglied="read" />
                 <Row sub label="ICS-Kalender" admin="yes" spiess="yes" vorstand="yes" mitglied="no" />
-                <Row label="Strafenarten" admin="full" spiess="full" vorstand="full" mitglied="none" />
+                <Row label="Strafenkatalog" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Audit-Log" admin="full" spiess="full" vorstand="full" mitglied="none" />
                 <Row label="Einstellungen" admin="full" spiess="full" vorstand="full" mitglied="full" />
                 <Row sub label="Sprache & Dark Mode" admin="yes" spiess="yes" vorstand="yes" mitglied="yes" />

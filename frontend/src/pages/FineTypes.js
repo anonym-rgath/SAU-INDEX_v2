@@ -125,10 +125,10 @@ const FineTypes = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
-              Strafenarten
+              Strafenkatalog
             </h1>
             <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-              Strafenkatalog
+              Alle verfügbaren Strafenarten
             </p>
           </div>
           {canManageFineTypes && (
