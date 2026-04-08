@@ -6,7 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
-import { Users, Plus, Eye, EyeOff } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2, QrCode, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Select,
@@ -243,11 +243,11 @@ const Members = () => {
                 </div>
                 {canManageMembers && (
                   <div className="flex gap-2 flex-shrink-0 ml-2">
-                    <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 px-3 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 text-xs font-medium" title="QR-Code">
-                      QR
+                    <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100" title="QR-Code">
+                      <QrCode className="w-4 h-4" />
                     </Button>
-                    <Button data-testid={`edit-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 px-3 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600 text-xs font-medium" title="Bearbeiten">
-                      Bearbeiten
+                    <Button data-testid={`edit-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600" title="Bearbeiten">
+                      <Pencil className="w-4 h-4" />
                     </Button>
                   </div>
                 )}
@@ -276,11 +276,11 @@ const Members = () => {
                   </div>
                   {canManageMembers && (
                     <div className="flex gap-2 flex-shrink-0 ml-2">
-                      <Button data-testid={`edit-archived-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 px-3 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600 text-xs font-medium" title="Bearbeiten">
-                        Bearbeiten
+                      <Button data-testid={`edit-archived-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600" title="Bearbeiten">
+                        <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button data-testid={`delete-archived-member-${member.id}`} onClick={() => { setDeletingMember(member); setDeleteDialogOpen(true); }} className="h-10 px-3 rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 text-xs font-medium" title="Endgültig löschen">
-                        Löschen
+                      <Button data-testid={`delete-archived-member-${member.id}`} onClick={() => { setDeletingMember(member); setDeleteDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100" title="Endgültig löschen">
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   )}
