@@ -283,7 +283,7 @@ const Dashboard = () => {
                       <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">Offene Beiträge</p>
                       <p className="text-xs text-stone-400 dark:text-stone-500">Aktuell noch zu zahlende Beiträge</p>
                     </div>
-                    <span className="text-stone-700 dark:text-stone-300 font-bold text-sm" data-testid="offene-beitraege">{formatCurrency(0)}</span>
+                    <span className="text-red-600 dark:text-red-400 font-bold text-sm" data-testid="offene-beitraege">{formatCurrency(0)}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
                     <div>
