@@ -21,7 +21,7 @@ import {
 } from './ui/dialog';
 import { toast } from 'sonner';
 
-const AddFineDialog = ({ open, onOpenChange, onSuccess, preselectedMemberId = null, showDateField = false }) => {
+const AddFineDialog = ({ open, onOpenChange, onSuccess, preselectedMemberId = null, showDateField = false, useEligibleMembers = false }) => {
   const [members, setMembers] = useState([]);
   const [fineTypes, setFineTypes] = useState([]);
   const [formData, setFormData] = useState({
@@ -44,7 +44,7 @@ const AddFineDialog = ({ open, onOpenChange, onSuccess, preselectedMemberId = nu
   const loadData = async () => {
     try {
       const [membersRes, fineTypesRes] = await Promise.all([
-        api.members.getAll(),
+        useEligibleMembers ? api.fines.getEligibleMembers() : api.members.getAll(),
         api.fineTypes.getAll(),
       ]);
       setMembers(membersRes.data);

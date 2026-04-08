@@ -20,7 +20,8 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 const Fines = () => {
-  const { canManageFines, isMitglied } = useAuth();
+  const { canManageFines, isMitglied, isVorstand } = useAuth();
+  const canCreateFines = canManageFines || isVorstand;
   const [fiscalYear, setFiscalYear] = useState('');
   const [fiscalYears, setFiscalYears] = useState([]);
   const [fines, setFines] = useState([]);
@@ -127,12 +128,12 @@ const Fines = () => {
               Strafenübersicht
             </h1>
             <p className="text-sm text-stone-500 mt-1">
-              {isMitglied ? 'Meine Strafeinträge' : 'Alle Strafeinträge'}
+              {isMitglied ? 'Meine Strafeinträge' : isVorstand ? 'Strafen von Spieß & Vorstand' : 'Alle Strafeinträge'}
             </p>
           </div>
           
           <div className="flex items-center gap-3">
-            {canManageFines && (
+            {canCreateFines && (
               <Button
                 data-testid="add-fine-button"
                 onClick={() => setAddDialogOpen(true)}
@@ -261,6 +262,7 @@ const Fines = () => {
         onOpenChange={setAddDialogOpen}
         preselectedMemberId={null}
         showDateField={true}
+        useEligibleMembers={true}
         onSuccess={() => {
           setAddDialogOpen(false);
           loadData();

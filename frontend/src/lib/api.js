@@ -39,6 +39,7 @@ export const api = {
     create: (data) => axios.post(`${API_URL}/fines`, data),
     update: (id, data) => axios.put(`${API_URL}/fines/${id}`, data),
     delete: (id) => axios.delete(`${API_URL}/fines/${id}`),
+    getEligibleMembers: () => axios.get(`${API_URL}/fines/eligible-members`),
   },
   statistics: {
     getAll: (fiscalYear) => axios.get(`${API_URL}/statistics`, { params: { fiscal_year: fiscalYear } }),

@@ -1163,13 +1163,35 @@ async def delete_fine_type(fine_type_id: str, auth=Depends(require_any_role)):
         raise HTTPException(status_code=404, detail="Strafenart nicht gefunden")
     return {"message": "Strafenart gelöscht"}
 
+async def _get_vorstand_eligible_member_ids():
+    """Gibt Member-IDs zurück, die zu Benutzern mit Rolle 'spiess' oder 'vorstand' verknüpft sind."""
+    users = await db.users.find(
+        {"role": {"$in": ["spiess", "vorstand"]}, "member_id": {"$ne": None}},
+        {"_id": 0, "member_id": 1}
+    ).to_list(1000)
+    return [u["member_id"] for u in users if u.get("member_id")]
+
+@api_router.get("/fines/eligible-members")
+async def get_eligible_members_for_fines(auth=Depends(require_any_role)):
+    """Gibt die Mitglieder zurück, für die der aktuelle Benutzer Strafen erstellen darf."""
+    role = auth.get('role')
+    active_members = await db.members.find({"status": {"$ne": "archiviert"}}, {"_id": 0}).to_list(5000)
+    
+    if role in ['admin', 'spiess']:
+        return active_members
+    
+    if role == 'vorstand':
+        eligible_ids = await _get_vorstand_eligible_member_ids()
+        return [m for m in active_members if m.get("id") in eligible_ids]
+    
+    return []
+
 @api_router.get("/fines", response_model=List[Fine])
 async def get_fines(fiscal_year: Optional[str] = None, auth=Depends(require_authenticated)):
     query = {}
     if fiscal_year:
         query["fiscal_year"] = fiscal_year
     
-    # Mitglieder und Vorstand mit member_id sehen nur eigene Strafen
     role = auth.get('role')
     member_id = auth.get('member_id')
     
@@ -1177,8 +1199,15 @@ async def get_fines(fiscal_year: Optional[str] = None, auth=Depends(require_auth
         if not member_id:
             return []
         query["member_id"] = member_id
-    elif role == 'vorstand' and member_id:
-        query["member_id"] = member_id
+    elif role == 'vorstand':
+        # Vorstand sieht Strafen von Spieß/Vorstand-verknüpften Mitgliedern
+        eligible_ids = await _get_vorstand_eligible_member_ids()
+        if member_id and member_id not in eligible_ids:
+            eligible_ids.append(member_id)
+        if eligible_ids:
+            query["member_id"] = {"$in": eligible_ids}
+        else:
+            return []
     
     fines = await db.fines.find(query, {"_id": 0}).sort("date", -1).to_list(5000)
     for fine in fines:
@@ -1187,7 +1216,7 @@ async def get_fines(fiscal_year: Optional[str] = None, auth=Depends(require_auth
     return fines
 
 @api_router.post("/fines", response_model=Fine)
-async def create_fine(input: FineCreate, auth=Depends(require_admin_or_spiess)):
+async def create_fine(input: FineCreate, auth=Depends(require_any_role)):
     fine_type = await db.fine_types.find_one({"id": input.fine_type_id}, {"_id": 0})
     if not fine_type:
         raise HTTPException(status_code=404, detail="Strafenart nicht gefunden")
@@ -1199,6 +1228,13 @@ async def create_fine(input: FineCreate, auth=Depends(require_admin_or_spiess)):
     # Keine Strafen für archivierte Mitglieder
     if member.get('status') == 'archiviert':
         raise HTTPException(status_code=400, detail="Keine Strafen für archivierte Mitglieder möglich")
+    
+    # Vorstand darf nur Strafen für Spieß/Vorstand-verknüpfte Mitglieder erstellen
+    role = auth.get('role')
+    if role == 'vorstand':
+        eligible_ids = await _get_vorstand_eligible_member_ids()
+        if input.member_id not in eligible_ids:
+            raise HTTPException(status_code=403, detail="Vorstand darf nur Strafen für Spieß und Vorstand erstellen")
     
     fine_data = input.model_dump()
     fine_data['fine_type_label'] = fine_type['label']
