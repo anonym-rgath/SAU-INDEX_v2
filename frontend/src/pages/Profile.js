@@ -155,22 +155,17 @@ const Profile = () => {
 
         {/* Persönliche Daten */}
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0">
-              <User className="w-5 h-5 text-stone-600 dark:text-stone-300" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-stone-900 dark:text-stone-100">Persönliche Daten</h2>
-              <p className="text-sm text-stone-500 dark:text-stone-400">Profilbild, Name und Kontaktdaten</p>
-            </div>
+          <div>
+            <h2 className="font-semibold text-stone-900 dark:text-stone-100">Persönliche Daten</h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400">Profilbild, Name und Kontaktdaten</p>
           </div>
 
           {noMember ? (
-            <p className="text-sm text-stone-500 dark:text-stone-400 pl-[52px]">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               Dein Account ist keinem Mitgliedsprofil zugeordnet. Bitte wende dich an einen Administrator.
             </p>
           ) : (
-            <div className="space-y-5 pl-[52px]">
+            <div className="space-y-5">
               {/* Avatar */}
               <div className="flex items-center gap-4">
                 <div className="relative group shrink-0">
