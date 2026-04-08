@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, CalendarDays, Save, Loader2, Globe, RefreshCw } from 'lucide-react';
+import { Building2, Save, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -23,16 +23,11 @@ const MONTHS = [
   { value: 12, label: 'Dezember' },
 ];
 
-const Section = ({ icon: Icon, title, description, children }) => (
+const Section = ({ title, description, children }) => (
   <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-5 sm:p-6 space-y-4">
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0">
-        <Icon className="w-5 h-5 text-stone-600 dark:text-stone-300" />
-      </div>
-      <div>
-        <h2 className="font-semibold text-stone-900 dark:text-stone-100">{title}</h2>
-        <p className="text-sm text-stone-500 dark:text-stone-400">{description}</p>
-      </div>
+    <div>
+      <h2 className="font-semibold text-stone-900 dark:text-stone-100">{title}</h2>
+      <p className="text-sm text-stone-500 dark:text-stone-400">{description}</p>
     </div>
     <div className="space-y-4">{children}</div>
   </div>
@@ -154,7 +149,7 @@ const ClubSettings = () => {
         </div>
 
         {/* Gründungsdatum */}
-        <Section icon={Building2} title="Gründungsdatum" description="Offizielles Gründungsdatum des Vereins">
+        <Section title="Gründungsdatum" description="Offizielles Gründungsdatum des Vereins">
           <input
             data-testid="founding-date-input"
             type="date"
@@ -171,7 +166,7 @@ const ClubSettings = () => {
         </Section>
 
         {/* Geschäftsjahr */}
-        <Section icon={CalendarDays} title="Geschäftsjahr" description="Startmonat des Vereins-Geschäftsjahres">
+        <Section title="Geschäftsjahr" description="Startmonat des Vereins-Geschäftsjahres">
           <select
             data-testid="fiscal-year-month-select"
             value={fiscalYearStartMonth}
@@ -195,7 +190,7 @@ const ClubSettings = () => {
 
         {/* ICS-Kalender - nur für Admin/Spieß/Vorstand */}
         {canEdit && (
-        <Section icon={Globe} title="ICS-Kalender" description="Externen Kalender per ICS-URL abonnieren">
+        <Section title="ICS-Kalender" description="Externen Kalender per ICS-URL abonnieren">
           <div>
             <Label className="mb-1.5 block">ICS-URL</Label>
             <Input data-testid="settings-ics-url-input" value={icsUrl} onChange={(e) => setIcsUrl(e.target.value)} placeholder="https://outlook.live.com/.../calendar.ics" className="h-12 rounded-xl border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 text-sm" />
