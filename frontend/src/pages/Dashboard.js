@@ -250,7 +250,7 @@ const Dashboard = () => {
 
                 <div className="space-y-2" data-testid="my-fines-list">
                   {myFines.length > 0 ? (
-                    myFines.slice(0, 8).map((fine) => (
+                    myFines.slice(0, 5).map((fine) => (
                       <div key={fine.id} className="p-3 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800">
                         <div className="flex items-start justify-between mb-1">
                           <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">{fine.fine_type_label}</p>
