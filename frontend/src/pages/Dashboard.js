@@ -375,9 +375,9 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Floating Action Buttons */}
+        {/* Floating Action Buttons (nur mobil) */}
         {canManageFines && (
-          <>
+          <div className="md:hidden">
             <button
               data-testid="add-fine-fab"
               onClick={() => { setSelectedMemberId(null); setAddDialogOpen(true); }}
@@ -392,7 +392,7 @@ const Dashboard = () => {
             >
               <QrCode className="w-5 h-5" />
             </button>
-          </>
+          </div>
         )}
       </div>
 
