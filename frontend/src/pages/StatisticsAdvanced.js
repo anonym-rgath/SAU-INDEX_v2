@@ -114,7 +114,7 @@ const StatisticsAdvanced = () => {
           <div className="flex items-center gap-2 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-full px-3 h-10 shadow-sm">
             <Calendar className="w-4 h-4 text-stone-400" />
             <select data-testid="stats-advanced-fiscal-year-selector" value={fiscalYear} onChange={(e) => setFiscalYear(e.target.value)} className="bg-transparent border-none outline-none text-stone-700 dark:text-stone-200 font-medium cursor-pointer text-base">
-              {fiscalYears.map(fy => (<option key={fy} value={fy}>GJ {fy}</option>))}
+              {fiscalYears.map(fy => (<option key={fy} value={fy}>{fy}</option>))}
             </select>
           </div>
         </div>
