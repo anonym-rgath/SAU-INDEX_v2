@@ -218,7 +218,7 @@ const Dashboard = () => {
             <Button
               data-testid="add-fine-button-desktop"
               onClick={() => { setSelectedMemberId(null); setAddDialogOpen(true); }}
-              className="h-11 px-8 rounded-full bg-orange-500 text-white font-bold tracking-wide hover:bg-orange-600 hover:shadow-orange-500/30 transition-all uppercase text-sm shadow-lg"
+              className="h-11 px-8 rounded-full bg-emerald-700 text-white font-bold tracking-wide hover:bg-emerald-800 hover:shadow-emerald-700/30 transition-all uppercase text-sm shadow-lg"
             >
               <Plus className="w-5 h-5 mr-2" />
               Strafe
