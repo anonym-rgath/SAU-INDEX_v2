@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
-import { Camera, Save, User } from 'lucide-react';
+import { Camera, Save, User, UserCircle } from 'lucide-react';
 import { api } from '../lib/api';
 import { displayRole } from '../lib/utils';
 
@@ -146,7 +146,10 @@ const Profile = () => {
     <div data-testid="profile-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Profil</h1>
+          <div className="flex items-center gap-3">
+            <UserCircle className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Profil</h1>
+          </div>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Persönliche Daten verwalten</p>
         </div>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShieldCheck } from 'lucide-react';
 
 const permIcon = (level) => {
   switch (level) {
@@ -52,7 +53,10 @@ const Roles = () => {
     <div data-testid="roles-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Benutzerrollen</h1>
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Benutzerrollen</h1>
+          </div>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Rollen und Berechtigungen im Überblick</p>
         </div>
 
