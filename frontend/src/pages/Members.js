@@ -236,7 +236,7 @@ const Members = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-stone-900 dark:text-stone-100">{getFullName(member)}</p>
                   {member.user_info && (
-                    <p className="text-xs text-stone-400 mt-0.5">Login: {member.user_info.username}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">Benutzername: {member.user_info.username}</p>
                   )}
                   {/* Mobile: Status + Rolle inline */}
                   <div className="flex items-center gap-2 mt-1 sm:hidden">
