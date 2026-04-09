@@ -22,21 +22,9 @@ ttyd ist bereits in der `docker-compose.yml` konfiguriert:
 docker compose up -d ttyd
 ```
 
-### Zugangsdaten (ttyd-eigener Schutz)
-
-Standardwerte (anpassbar in `.env`):
-- **Benutzer:** `admin`
-- **Passwort:** `SauIndex2025!`
-
-Anpassen uber `.env`:
-```env
-TTYD_USER=mein_user
-TTYD_PASS=mein_sicheres_passwort
-```
-
 ### Testen (lokal auf dem Pi)
 ```bash
-curl -u admin:SauIndex2025! http://127.0.0.1:7681/
+curl http://127.0.0.1:7681/
 ```
 
 ## 2. Cloudflare Tunnel erweitern
@@ -103,8 +91,7 @@ Ohne Access-Policy ist das Terminal fur jeden erreichbar!
 ### Ergebnis:
 Beim Aufruf von `https://ssh.sau-index.de`:
 1. Cloudflare zeigt Login-Seite (E-Mail-Code)
-2. Nach Verifizierung -> ttyd-Login (admin/SauIndex2025!)
-3. Shell im Browser
+2. Nach Verifizierung -> Shell im Browser
 
 ## 5. Verfugbare Befehle im Terminal
 
@@ -127,10 +114,9 @@ docker exec -it rheinzel-backend bash
 docker exec -it rheinzel-mongodb mongo rheinzelmaenner
 ```
 
-## Sicherheit (3 Schichten)
+## Sicherheit (2 Schichten)
 
 | Schicht | Schutz |
 |---------|--------|
 | **Cloudflare Access** | E-Mail-Verifizierung / IP-Whitelist |
-| **ttyd --credential** | Benutzername + Passwort |
 | **Nur localhost** | Port 7681 nicht von aussen erreichbar |

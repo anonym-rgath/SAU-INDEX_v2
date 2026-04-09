@@ -90,7 +90,6 @@ services:
       ttyd
         --port 7681
         --writable
-        --credential ${TTYD_USER:-admin}:${TTYD_PASS:-SauIndex2025!}
         bash
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
