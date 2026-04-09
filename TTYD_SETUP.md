@@ -10,9 +10,13 @@ Browser (https://ssh.sau-index.de)
 Cloudflare (SSL + Access-Policy)
     | Tunnel
 cloudflared (Raspberry Pi)
-    | HTTP (lokal)
-ttyd (127.0.0.1:7681) -> bash + Docker-Zugriff
+    | HTTP
+Traefik (Reverse Proxy)
+    | Host: ssh.sau-index.de
+ttyd (Container, Port 7681) -> bash + Docker-Zugriff
 ```
+
+Identischer Weg wie die Hauptanwendung (`rhnzl.sau-index.de`), nur andere Subdomain.
 
 ## 1. ttyd starten
 
@@ -29,6 +33,8 @@ curl http://127.0.0.1:7681/
 
 ## 2. Cloudflare Tunnel erweitern
 
+Da alles uber Traefik lauft, muss der Cloudflare Tunnel nur wissen, dass `ssh.sau-index.de` ebenfalls an Traefik geht. Traefik routet dann anhand des Hostnamens automatisch zum ttyd-Container.
+
 ### Option A: Token-basierter Tunnel (Dashboard)
 
 1. **Cloudflare Dashboard** -> Zero Trust -> Networks -> Tunnels
@@ -38,7 +44,7 @@ curl http://127.0.0.1:7681/
    - **Subdomain:** `ssh`
    - **Domain:** `sau-index.de`
    - **Type:** `HTTP`
-   - **URL:** `127.0.0.1:7681`
+   - **URL:** `traefik:80` (gleicher Service wie bei rhnzl)
 5. Speichern
 
 ### Option B: Config-Datei (`config.yml`)
@@ -51,11 +57,13 @@ credentials-file: /root/.cloudflared/<TUNNEL-ID>.json
 
 ingress:
   - hostname: rhnzl.sau-index.de
-    service: http://localhost:80
+    service: http://traefik:80
   - hostname: ssh.sau-index.de
-    service: http://localhost:7681
+    service: http://traefik:80
   - service: http_status:404
 ```
+
+Traefik erkennt den Hostnamen und leitet automatisch an den richtigen Container weiter.
 
 Danach Tunnel neu starten:
 ```bash
@@ -119,4 +127,4 @@ docker exec -it rheinzel-mongodb mongo rheinzelmaenner
 | Schicht | Schutz |
 |---------|--------|
 | **Cloudflare Access** | E-Mail-Verifizierung / IP-Whitelist |
-| **Nur localhost** | Port 7681 nicht von aussen erreichbar |
+| **Traefik** | Kein externer Port, nur uber Proxy erreichbar |

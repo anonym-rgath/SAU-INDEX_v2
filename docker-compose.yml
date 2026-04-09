@@ -93,10 +93,15 @@ services:
         bash
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "127.0.0.1:7681:7681"
     networks:
       - rheinzel-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ttyd.rule=Host(`ssh.sau-index.de`)"
+      - "traefik.http.routers.ttyd.entrypoints=web"
+      - "traefik.http.services.ttyd.loadbalancer.server.port=7681"
+      - "traefik.docker.network=traefik-network"
 
 volumes:
   mongodb_data:
