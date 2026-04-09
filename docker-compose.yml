@@ -82,28 +82,9 @@ services:
       - rheinzel-network
 
   # Web-Terminal (ttyd) - Zugriff über ssh.sau-index.de via Cloudflare
-  ttyd:
-    build:
-      context: ./ttyd
-      dockerfile: Dockerfile
-    container_name: rheinzel-ttyd
-    restart: unless-stopped
-    command: >
-      ttyd
-        --port 7681
-        --writable
-        bash
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - rheinzel-network
-      - traefik-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ttyd.rule=Host(`ssh.sau-index.de`)"
-      - "traefik.http.routers.ttyd.entrypoints=web"
-      - "traefik.http.services.ttyd.loadbalancer.server.port=7681"
-      - "traefik.docker.network=traefik-network"
+  # HINWEIS: ttyd läuft als systemd-Service direkt auf dem Host (nicht als Container).
+  # Siehe TTYD_SETUP.md für Installation und Konfiguration.
+  # Traefik routet ssh.sau-index.de an den Host-Port 7681.
 
 volumes:
   mongodb_data:

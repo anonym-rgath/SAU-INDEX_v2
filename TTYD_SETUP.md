@@ -1,6 +1,6 @@
 # Web-Terminal (ttyd) Setup
 
-Web-basierter Shell-Zugang uber `https://ssh.sau-index.de`, abgesichert uber Cloudflare Tunnel + Access.
+Web-basierter Shell-Zugang mit echtem Pi-Login uber `https://ssh.sau-index.de`, abgesichert uber Cloudflare.
 
 ## Architektur
 
@@ -11,19 +11,58 @@ Cloudflare (SSL + Access-Policy)
     | Tunnel
 cloudflared (Raspberry Pi)
     | HTTP
-Traefik (Reverse Proxy)
-    | Host: ssh.sau-index.de
-ttyd (Container, Port 7681) -> bash + Docker-Zugriff
+Traefik (Reverse Proxy, Host: ssh.sau-index.de)
+    | http://127.0.0.1:7681
+ttyd (systemd-Service auf dem Host) -> /bin/login
+    |
+Echtes Pi-Login (Benutzer + Passwort)
 ```
 
-Identischer Weg wie die Hauptanwendung (`rhnzl.sau-index.de`), nur andere Subdomain.
-
-## 1. ttyd starten
-
-ttyd ist bereits in der `docker-compose.yml` konfiguriert:
+## 1. ttyd installieren
 
 ```bash
-docker compose up -d ttyd
+sudo apt update
+sudo apt install -y ttyd
+```
+
+Falls nicht im Repository verfugbar:
+```bash
+# ARM64 Binary direkt herunterladen
+TTYD_VERSION=1.7.7
+sudo wget -O /usr/local/bin/ttyd \
+  https://github.com/tsl0922/ttyd/releases/download/$TTYD_VERSION/ttyd.aarch64
+sudo chmod +x /usr/local/bin/ttyd
+```
+
+## 2. systemd-Service erstellen
+
+```bash
+sudo tee /etc/systemd/system/ttyd.service << 'EOF'
+[Unit]
+Description=ttyd - Web Terminal
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ttyd --port 7681 --interface 127.0.0.1 --writable login
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Wichtige Parameter:
+- `--interface 127.0.0.1` -> Nur lokal erreichbar (nicht von aussen)
+- `--writable` -> Eingaben erlaubt
+- `login` -> Echtes Linux-Login mit Pi-Benutzer/Passwort
+
+Service aktivieren und starten:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable ttyd
+sudo systemctl start ttyd
 ```
 
 ### Testen (lokal auf dem Pi)
@@ -31,60 +70,81 @@ docker compose up -d ttyd
 curl http://127.0.0.1:7681/
 ```
 
-## 2. Cloudflare Tunnel erweitern
+## 3. Traefik-Konfiguration
 
-Da alles uber Traefik lauft, muss der Cloudflare Tunnel nur wissen, dass `ssh.sau-index.de` ebenfalls an Traefik geht. Traefik routet dann anhand des Hostnamens automatisch zum ttyd-Container.
+ttyd lauft auf dem Host (nicht in Docker). Traefik muss den Traffic an `127.0.0.1:7681` weiterleiten.
 
-### Option A: Token-basierter Tunnel (Dashboard)
+### Dynamische Traefik-Konfiguration (File Provider)
 
-1. **Cloudflare Dashboard** -> Zero Trust -> Networks -> Tunnels
-2. Den bestehenden Tunnel auswahlen (der fur `rhnzl.sau-index.de`)
-3. **"Configure"** klicken
-4. Unter **"Public Hostname"** -> **"Add a public hostname"**:
+In der Traefik-Konfiguration (`traefik.yml` oder `traefik.toml`) einen File-Provider hinzufugen:
+
+```yaml
+# traefik.yml
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    filename: /etc/traefik/dynamic.yml
+```
+
+Dynamische Konfiguration erstellen:
+
+```yaml
+# /etc/traefik/dynamic.yml
+http:
+  routers:
+    ttyd:
+      rule: "Host(`ssh.sau-index.de`)"
+      entrypoints:
+        - web
+      service: ttyd
+
+  services:
+    ttyd:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:7681"
+```
+
+Falls `host.docker.internal` nicht funktioniert, die IP des Docker-Bridges verwenden:
+```bash
+# IP herausfinden
+ip addr show docker0 | grep inet
+# Typisch: 172.17.0.1
+```
+
+Dann in der Config:
+```yaml
+servers:
+  - url: "http://172.17.0.1:7681"
+```
+
+Traefik neu starten:
+```bash
+docker restart traefik
+```
+
+## 4. Cloudflare Tunnel
+
+Der Tunnel muss `ssh.sau-index.de` an Traefik weiterleiten (gleicher Weg wie `rhnzl.sau-index.de`).
+
+### Im Cloudflare Dashboard:
+
+1. **Zero Trust** -> Networks -> Tunnels
+2. Bestehenden Tunnel auswahlen
+3. **"Configure"** -> **"Public Hostname"** -> **"Add a public hostname"**:
    - **Subdomain:** `ssh`
    - **Domain:** `sau-index.de`
    - **Type:** `HTTP`
-   - **URL:** `traefik:80` (gleicher Service wie bei rhnzl)
-5. Speichern
+   - **URL:** Gleiche wie bei `rhnzl` (z.B. `traefik:80` oder `localhost:80`)
+4. Speichern
 
-### Option B: Config-Datei (`config.yml`)
-
-Falls du eine lokale `config.yml` verwendest:
-
-```yaml
-tunnel: <TUNNEL-ID>
-credentials-file: /root/.cloudflared/<TUNNEL-ID>.json
-
-ingress:
-  - hostname: rhnzl.sau-index.de
-    service: http://traefik:80
-  - hostname: ssh.sau-index.de
-    service: http://traefik:80
-  - service: http_status:404
-```
-
-Traefik erkennt den Hostnamen und leitet automatisch an den richtigen Container weiter.
-
-Danach Tunnel neu starten:
-```bash
-docker restart cloudflared
-```
-
-## 3. DNS-Eintrag
-
-Wird bei **Option A** automatisch erstellt. Falls nicht:
-
-1. Cloudflare Dashboard -> DNS -> Records
-2. Neuer CNAME-Eintrag:
-   - **Name:** `ssh`
-   - **Target:** `<TUNNEL-ID>.cfargotunnel.com`
-   - **Proxy:** Aktiviert (orange Wolke)
-
-## 4. Cloudflare Access (WICHTIG!)
+## 5. Cloudflare Access (WICHTIG!)
 
 Ohne Access-Policy ist das Terminal fur jeden erreichbar!
 
-1. **Cloudflare Dashboard** -> Zero Trust -> Access -> Applications
+1. **Zero Trust** -> Access -> Applications
 2. **"Add an application"** -> **Self-hosted**
 3. Konfiguration:
    - **Application name:** `SSH Terminal`
@@ -96,30 +156,47 @@ Ohne Access-Policy ist das Terminal fur jeden erreichbar!
    - **Include:** `Emails` -> Deine E-Mail-Adresse(n) eintragen
 5. Speichern
 
-### Ergebnis:
+## 6. Ergebnis
+
 Beim Aufruf von `https://ssh.sau-index.de`:
-1. Cloudflare zeigt Login-Seite (E-Mail-Code)
-2. Nach Verifizierung -> Shell im Browser
+1. Cloudflare zeigt Access-Login (E-Mail-Code)
+2. Nach Verifizierung -> Pi-Login (Benutzername + Passwort)
+3. Voller Shell-Zugriff auf den Raspberry Pi
 
-## 5. Verfugbare Befehle im Terminal
-
-Da der Docker-Socket gemountet ist:
+### Verfugbare Befehle (alles!)
 
 ```bash
-# Container anzeigen
+# Docker verwalten
 docker ps
-
-# Logs anzeigen
-docker logs rheinzel-backend --tail 50
-
-# Container neu starten
+docker compose logs backend --tail 50
 docker compose restart backend
 
-# In einen Container springen
-docker exec -it rheinzel-backend bash
+# System verwalten
+sudo systemctl status ttyd
+sudo apt update
 
-# Datenbank-Zugriff
-docker exec -it rheinzel-mongodb mongo rheinzelmaenner
+# Dateien bearbeiten
+nano /home/pi/docker-compose.yml
+
+# Netzwerk pruefen
+ip addr
+ping google.com
+```
+
+## 7. Service verwalten
+
+```bash
+# Status pruefen
+sudo systemctl status ttyd
+
+# Neustart
+sudo systemctl restart ttyd
+
+# Stoppen
+sudo systemctl stop ttyd
+
+# Logs ansehen
+sudo journalctl -u ttyd -f
 ```
 
 ## Sicherheit (2 Schichten)
@@ -127,4 +204,6 @@ docker exec -it rheinzel-mongodb mongo rheinzelmaenner
 | Schicht | Schutz |
 |---------|--------|
 | **Cloudflare Access** | E-Mail-Verifizierung / IP-Whitelist |
-| **Traefik** | Kein externer Port, nur uber Proxy erreichbar |
+| **Linux Login** | Pi-Benutzer + Passwort erforderlich |
+
+ttyd lauscht nur auf `127.0.0.1` und ist von aussen nicht direkt erreichbar.
