@@ -81,6 +81,24 @@ services:
     networks:
       - rheinzel-network
 
+  # Web-Terminal (ttyd) - Zugriff über ssh.sau-index.de via Cloudflare
+  ttyd:
+    image: tsl0922/ttyd:latest
+    container_name: rheinzel-ttyd
+    restart: unless-stopped
+    command: >
+      ttyd
+        --port 7681
+        --writable
+        --credential ${TTYD_USER:-admin}:${TTYD_PASS:-SauIndex2025!}
+        bash
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:7681:7681"
+    networks:
+      - rheinzel-network
+
 volumes:
   mongodb_data:
   avatar_data:
