@@ -83,7 +83,9 @@ services:
 
   # Web-Terminal (ttyd) - Zugriff über ssh.sau-index.de via Cloudflare
   ttyd:
-    image: tsl0922/ttyd:latest
+    build:
+      context: ./ttyd
+      dockerfile: Dockerfile
     container_name: rheinzel-ttyd
     restart: unless-stopped
     command: >
