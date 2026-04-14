@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -35,17 +35,7 @@ const Fines = () => {
   const [editingFine, setEditingFine] = useState(null);
   const [deletingFine, setDeletingFine] = useState(null);
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  useEffect(() => {
-    if (fiscalYear) {
-      loadData();
-    }
-  }, [fiscalYear]);
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const yearsRes = await api.fiscalYears.getAll();
       const years = yearsRes.data?.fiscal_years || [];
@@ -59,9 +49,9 @@ const Fines = () => {
         toast.error('Fehler beim Laden der Geschäftsjahre');
       }
     }
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!fiscalYear) return;
     setLoading(true);
     try {
@@ -88,7 +78,17 @@ const Fines = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fiscalYear, isVorstand]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    if (fiscalYear) {
+      loadData();
+    }
+  }, [fiscalYear, loadData]);
 
   const handleDelete = async () => {
     try {

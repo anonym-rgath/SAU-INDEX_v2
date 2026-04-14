@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -101,15 +101,7 @@ const Dashboard = () => {
   const showAdminSection = isAdmin || isSpiess;
   const hasMemberProfile = !!user?.member_id;
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  useEffect(() => {
-    if (fiscalYear) loadData();
-  }, [fiscalYear]);
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const yearsRes = await api.fiscalYears.getAll();
       const years = yearsRes.data?.fiscal_years || [];
@@ -118,9 +110,9 @@ const Dashboard = () => {
     } catch (error) {
       if (error?.code !== 'ERR_CANCELED') toast.error('Fehler beim Laden der Geschäftsjahre');
     }
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!fiscalYear) return;
     setLoading(true);
     try {
@@ -156,7 +148,15 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fiscalYear, hasMemberProfile, showAdminSection, user?.member_id]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    if (fiscalYear) loadData();
+  }, [fiscalYear, loadData]);
 
   const handleFineAdded = () => {
     setAddDialogOpen(false);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -72,9 +72,7 @@ const Members = () => {
     return member.name || 'Unbekannt';
   };
 
-  useEffect(() => { loadMembers(); }, []);
-
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     try {
       const response = await api.members.getAll();
       setMembers(response.data);
@@ -83,7 +81,9 @@ const Members = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => { loadMembers(); }, [loadMembers]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -175,8 +175,13 @@ const Members = () => {
     setDialogOpen(true);
   };
 
-  const activeMembers = members.filter(m => m.status !== 'archiviert');
-  const archivedMembers = members.filter(m => m.status === 'archiviert');
+  const activeMembers = useMemo(() => members.filter(m => m.status !== 'archiviert'), [members]);
+  const archivedMembers = useMemo(() => members.filter(m => m.status === 'archiviert'), [members]);
+
+  const sortedArchivedMembers = useMemo(() => 
+    [...archivedMembers].sort((a, b) => (a.lastName || '').localeCompare(b.lastName || '')),
+    [archivedMembers]
+  );
 
   const getSortedMembers = (list) => {
     const sorted = [...list];
@@ -306,7 +311,7 @@ const Members = () => {
             </div>
             <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Ausgetretene Mitglieder (erscheinen nicht in Rankings)</p>
             <div className="space-y-2" data-testid="archived-members-list">
-              {[...archivedMembers].sort((a, b) => (a.lastName || '').localeCompare(b.lastName || '')).map((member) => (
+              {sortedArchivedMembers.map((member) => (
                 <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-100/50 dark:bg-stone-800/50 min-h-[72px] opacity-75" data-testid={`archived-member-item-${member.id}`}>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

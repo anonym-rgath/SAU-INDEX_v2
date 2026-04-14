@@ -61,7 +61,7 @@ def create_large_image(size_mb: float = 6) -> bytes:
     # Create a large image by making it very large dimensions
     # 6MB ~ 1500x1500 RGB uncompressed, but JPEG compresses well
     # So we create a larger image with noise to prevent compression
-    import random
+    import secrets
     width = 3000
     height = 3000
     img = Image.new('RGB', (width, height))
@@ -69,7 +69,7 @@ def create_large_image(size_mb: float = 6) -> bytes:
     pixels = img.load()
     for i in range(width):
         for j in range(height):
-            pixels[i, j] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            pixels[i, j] = (secrets.randbelow(256), secrets.randbelow(256), secrets.randbelow(256))
     buf = io.BytesIO()
     img.save(buf, format='PNG')  # PNG doesn't compress as much
     return buf.getvalue()

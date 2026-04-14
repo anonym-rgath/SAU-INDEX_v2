@@ -30,11 +30,11 @@ const Row = ({ label, admin, spiess, vorstand, mitglied, sub }) => (
       {sub && <span className="text-stone-300 dark:text-stone-600 mr-1.5">&#8227;</span>}
       {label}
     </td>
-    {[admin, spiess, vorstand, mitglied].map((level, i) => (
-      <td key={i} className="text-center p-2.5">
+    {['admin', 'spiess', 'vorstand', 'mitglied'].map((role) => (
+      <td key={role} className="text-center p-2.5">
         <div className="flex flex-col items-center gap-0.5">
-          {permIcon(level)}
-          <span className="text-[9px] text-stone-400 dark:text-stone-500 leading-none">{permLabel[level]}</span>
+          {permIcon({ admin, spiess, vorstand, mitglied }[role])}
+          <span className="text-[9px] text-stone-400 dark:text-stone-500 leading-none">{permLabel[{ admin, spiess, vorstand, mitglied }[role]]}</span>
         </div>
       </td>
     ))}

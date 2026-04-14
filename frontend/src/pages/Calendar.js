@@ -296,7 +296,7 @@ const CalendarPage = () => {
 
                 return (
                   <div
-                    key={i}
+                    key={day.date.toISOString()}
                     className={`bg-white dark:bg-stone-900 p-1.5 min-h-[70px] sm:min-h-[90px] ${!day.isCurrentMonth ? 'opacity-30' : ''} ${isToday ? 'ring-2 ring-inset ring-emerald-500' : ''}`}
                   >
                     <div className={`text-xs font-medium mb-1 ${isToday ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-600 dark:text-stone-400'}`}>

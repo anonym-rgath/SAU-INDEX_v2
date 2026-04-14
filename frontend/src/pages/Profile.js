@@ -56,7 +56,9 @@ const Profile = () => {
       const res = await api.get(`/profile/avatar/${path}`, { responseType: 'blob' });
       const url = URL.createObjectURL(res.data);
       setAvatarBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load avatar:', err);
+    }
   };
 
   const handleSave = async () => {

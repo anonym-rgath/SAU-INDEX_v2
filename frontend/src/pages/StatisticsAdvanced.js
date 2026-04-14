@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../lib/api';
 import { Card } from '../components/ui/card';
 import { Calendar, TrendingUp, Award, Users as UsersIcon, Coins } from 'lucide-react';
@@ -31,10 +31,7 @@ const StatisticsAdvanced = () => {
   const [fineTypes, setFineTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadInitialData(); }, []);
-  useEffect(() => { if (fiscalYear) loadData(); }, [fiscalYear]);
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const yearsRes = await api.fiscalYears.getAll();
       const years = yearsRes.data?.fiscal_years || [];
@@ -43,9 +40,9 @@ const StatisticsAdvanced = () => {
     } catch (error) {
       if (error?.code !== 'ERR_CANCELED') toast.error('Fehler beim Laden der Geschäftsjahre');
     }
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [statsRes, finesRes, membersRes, fineTypesRes] = await Promise.all([
@@ -63,7 +60,10 @@ const StatisticsAdvanced = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fiscalYear]);
+
+  useEffect(() => { loadInitialData(); }, [loadInitialData]);
+  useEffect(() => { if (fiscalYear) loadData(); }, [fiscalYear, loadData]);
 
   const fineTypeStats = useMemo(() => {
     const stats = {};

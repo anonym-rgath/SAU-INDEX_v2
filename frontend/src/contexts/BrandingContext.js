@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../lib/api';
 
 const BrandingContext = createContext();
@@ -12,7 +12,7 @@ export const BrandingProvider = ({ children }) => {
   const [hasLogo, setHasLogo] = useState(false);
   const logoUrl = api.branding.logoUrl;
 
-  const loadBranding = async () => {
+  const loadBranding = useCallback(async () => {
     try {
       const res = await api.branding.get();
       setClubName(res.data.club_name || DEFAULT_NAME);
@@ -21,18 +21,20 @@ export const BrandingProvider = ({ children }) => {
       setClubName(DEFAULT_NAME);
       setHasLogo(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadBranding();
-  }, []);
+  }, [loadBranding]);
 
   useEffect(() => {
     document.title = clubName;
   }, [clubName]);
 
+  const contextValue = useMemo(() => ({ clubName, hasLogo, logoUrl, loadBranding }), [clubName, hasLogo, logoUrl, loadBranding]);
+
   return (
-    <BrandingContext.Provider value={{ clubName, hasLogo, logoUrl, loadBranding }}>
+    <BrandingContext.Provider value={contextValue}>
       {children}
     </BrandingContext.Provider>
   );

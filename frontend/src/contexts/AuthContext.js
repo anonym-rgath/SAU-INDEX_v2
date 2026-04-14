@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
@@ -10,23 +10,23 @@ const ABSOLUTE_TIMEOUT_MS = 8 * 60 * 60 * 1000;
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
-    const savedToken = localStorage.getItem('token');
+    const savedToken = sessionStorage.getItem('token');
     if (savedToken) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
     }
     return savedToken;
   });
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
+  const [user, setUser] = useState(JSON.parse(sessionStorage.getItem('user') || 'null'));
   const [loading, setLoading] = useState(false);
-  const [loginTime, setLoginTime] = useState(parseInt(localStorage.getItem('loginTime') || '0'));
+  const [loginTime, setLoginTime] = useState(parseInt(sessionStorage.getItem('loginTime') || '0'));
   
   const idleTimerRef = useRef(null);
   const absoluteTimerRef = useRef(null);
 
   const logout = useCallback((reason = '') => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('loginTime');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('loginTime');
     setToken(null);
     setUser(null);
     setLoginTime(0);
@@ -45,15 +45,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, logout]);
 
-  const login = async (username, password) => {
+  const login = useCallback(async (username, password) => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { username, password });
       const { token: newToken, role, username: userName, member_id } = response.data;
       const now = Date.now();
-      localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify({ username: userName, role, member_id }));
-      localStorage.setItem('loginTime', now.toString());
+      sessionStorage.setItem('token', newToken);
+      sessionStorage.setItem('user', JSON.stringify({ username: userName, role, member_id }));
+      sessionStorage.setItem('loginTime', now.toString());
       setToken(newToken);
       setUser({ username: userName, role, member_id });
       setLoginTime(now);
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (token && loginTime) {
@@ -121,15 +121,17 @@ export const AuthProvider = ({ children }) => {
   const canManageICS = ['admin', 'spiess', 'vorstand'].includes(role);
   const canManageRoles = isAdmin;
 
+  const contextValue = useMemo(() => ({
+    token, user, login, logout, loading,
+    isAuthenticated: !!token,
+    isAdmin, isSpiess, isVorstand, isMitglied,
+    canManageMembers, canManageFines, canManageFineTypes,
+    canManageEvents, canSeeAdvancedStats, canSeeAllFines,
+    canSeeFineInfo, canManageICS, canManageRoles,
+  }), [token, user, login, logout, loading, isAdmin, isSpiess, isVorstand, isMitglied, canManageMembers, canManageFines, canManageFineTypes, canManageEvents, canSeeAdvancedStats, canSeeAllFines, canSeeFineInfo, canManageICS, canManageRoles]);
+
   return (
-    <AuthContext.Provider value={{
-      token, user, login, logout, loading,
-      isAuthenticated: !!token,
-      isAdmin, isSpiess, isVorstand, isMitglied,
-      canManageMembers, canManageFines, canManageFineTypes,
-      canManageEvents, canSeeAdvancedStats, canSeeAllFines,
-      canSeeFineInfo, canManageICS, canManageRoles,
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

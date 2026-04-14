@@ -19,8 +19,8 @@ const NotificationBell = () => {
     try {
       const res = await api.get('/notifications/unread-count');
       setUnreadCount(res.data.count);
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error('Failed to fetch unread count:', err);
     }
   }, []);
 
@@ -29,8 +29,8 @@ const NotificationBell = () => {
     try {
       const res = await api.get('/notifications');
       setNotifications(res.data);
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
     } finally {
       setLoading(false);
     }
@@ -71,8 +71,8 @@ const NotificationBell = () => {
       await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
     }
   };
 
@@ -81,8 +81,8 @@ const NotificationBell = () => {
       await api.put('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
     }
   };
 

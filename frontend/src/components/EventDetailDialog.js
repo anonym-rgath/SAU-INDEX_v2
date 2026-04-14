@@ -177,8 +177,8 @@ const EventDetailDialog = ({ event, open, onOpenChange, onRespond, onEdit, onDel
 
                 {/* Response List */}
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {event.responses.map((r, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-stone-50">
+                  {event.responses.map((r) => (
+                    <div key={`${r.member_id}-${r.response}`} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-stone-50">
                       <span className="text-sm text-stone-700">{r.member_name}</span>
                       {r.response === 'zugesagt'
                         ? <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs">Zugesagt</Badge>

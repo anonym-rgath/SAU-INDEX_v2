@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Switch } from '../components/ui/switch';
@@ -34,18 +34,20 @@ const Settings = () => {
   const [icsSaving, setIcsSaving] = useState(false);
   const [icsSyncing, setIcsSyncing] = useState(false);
 
-  useEffect(() => {
-    if (canEdit) loadIcsSettings();
-  }, []);
-
-  const loadIcsSettings = async () => {
+  const loadIcsSettings = useCallback(async () => {
     try {
       const res = await api.ics.getSettings();
       setIcsUrl(res.data.ics_url || '');
       setSyncEnabled(res.data.sync_enabled || false);
       setLastSync(res.data.last_sync);
-    } catch { /* ignore */ }
-  };
+    } catch (err) {
+      console.error('Failed to load ICS settings:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (canEdit) loadIcsSettings();
+  }, [canEdit, loadIcsSettings]);
 
   const handleSaveIcs = async () => {
     setIcsSaving(true);
