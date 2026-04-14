@@ -277,23 +277,36 @@ const Fines = () => {
               <p className="text-xs text-stone-500 mt-0.5">{createdByMeFines.length} Einträge im {fiscalYear}</p>
             </div>
             <div className="space-y-2" data-testid="created-by-me-fines-list">
+              {/* Desktop Tabellenkopf */}
+              <div className="hidden lg:flex items-center px-4 py-2 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">
+                <div className="flex-1 min-w-0">Mitglied</div>
+                <div className="w-40">Strafenart</div>
+                <div className="w-36">Datum</div>
+                <div className="w-24 text-right">Betrag</div>
+              </div>
               {createdByMeFines.map((fine) => (
                 <div
                   key={fine.id}
-                  className="flex items-start justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
+                  className="flex items-start lg:items-center justify-between p-4 rounded-xl border border-stone-100 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
                   data-testid={`created-fine-${fine.id}`}
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-stone-900 truncate">
-                        {fine.member_name || getMemberName(fine.member_id)}
-                      </p>
-                      <span className="text-emerald-700 font-bold whitespace-nowrap">
-                        {formatCurrency(fine.amount)}
-                      </span>
+                  <div className="flex-1 min-w-0 lg:flex lg:items-center lg:gap-0">
+                    <div className="flex-1 min-w-0 lg:pr-4">
+                      <div className="flex items-center gap-2 mb-1 lg:mb-0">
+                        <p className="font-bold text-stone-900 truncate">
+                          {fine.member_name || getMemberName(fine.member_id)}
+                        </p>
+                        <span className="text-emerald-700 font-bold whitespace-nowrap lg:hidden">
+                          {formatCurrency(fine.amount)}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm text-stone-600 truncate">{fine.fine_type_label}</p>
-                    <p className="text-xs text-stone-400 mt-1">{formatDate(fine.date)}</p>
+                    <div className="hidden lg:block w-40 text-sm text-stone-600 dark:text-stone-400 truncate">{fine.fine_type_label}</div>
+                    <div className="hidden lg:block w-36 text-sm text-stone-500 dark:text-stone-400">{formatDate(fine.date)}</div>
+                    <div className="hidden lg:block w-24 text-right font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(fine.amount)}</div>
+                    {/* Mobil Subzeile */}
+                    <p className="text-sm text-stone-600 truncate lg:hidden">{fine.fine_type_label}</p>
+                    <p className="text-xs text-stone-400 mt-1 lg:hidden">{formatDate(fine.date)}</p>
                   </div>
                 </div>
               ))}
