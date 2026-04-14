@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, CalendarDays, BarChart4, Shield, ShieldCheck, Users, Tag, SlidersHorizontal, UserCircle, Building2, ChevronDown, LogOut, Key } from 'lucide-react';
+import { LayoutDashboard, Receipt, CalendarDays, BarChart4, Shield, ShieldCheck, Users, Tag, SlidersHorizontal, UserCircle, Building2, ChevronDown, LogOut, Key, ContactRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBranding } from '../contexts/BrandingContext';
 import { displayRole } from '../lib/utils';
@@ -23,6 +23,7 @@ const DesktopSidebar = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/calendar', icon: CalendarDays, label: 'Termine' },
     { path: '/fines', icon: Receipt, label: 'Strafenübersicht' },
+    canManageMembers && { path: '/member-directory', icon: ContactRound, label: 'Mitgliederseite' },
     canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken' },
   ].filter(Boolean);
 

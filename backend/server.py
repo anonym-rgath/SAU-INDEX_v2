@@ -923,6 +923,54 @@ async def reset_user_password(request: Request, user_id: str, data: ResetPasswor
     
     return {"message": "Passwort erfolgreich zurückgesetzt"}
 
+# ============== Mitgliederseite (Vorstand/Spieß) ==============
+
+@api_router.get("/member-directory")
+async def get_member_directory(auth=Depends(verify_token)):
+    """Mitgliederseite: Tabellarische Übersicht aller Mitglieder mit Profildaten.
+    Zugriff nur für Admin, Spieß und Vorstand."""
+    role = auth.get('role')
+    if role not in ('admin', 'spiess', 'vorstand'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Kein Zugriff auf die Mitgliederseite")
+    
+    members = await db.members.find({"status": {"$ne": "archiviert"}}, {"_id": 0}).to_list(1000)
+    users = await db.users.find({"role": {"$ne": "admin"}}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    user_by_member = {u['member_id']: u for u in users if u.get('member_id')}
+    
+    result = []
+    for member in members:
+        if 'firstName' not in member and 'name' in member:
+            name_parts = member['name'].split(' ', 1)
+            member['firstName'] = name_parts[0]
+            member['lastName'] = name_parts[1] if len(name_parts) > 1 else ''
+        
+        entry = {
+            "id": member.get("id"),
+            "firstName": member.get("firstName", ""),
+            "lastName": member.get("lastName", ""),
+            "status": member.get("status", "aktiv"),
+            "birthday": member.get("birthday"),
+            "email": member.get("email"),
+            "street": member.get("street"),
+            "zipCode": member.get("zipCode"),
+            "city": member.get("city"),
+            "joinDate": member.get("joinDate"),
+            "joinDateCorps": member.get("joinDateCorps"),
+            "confession": member.get("confession"),
+            "avatar_path": member.get("avatar_path"),
+        }
+        
+        linked_user = user_by_member.get(member.get('id'))
+        if linked_user:
+            entry['role'] = linked_user.get('role')
+        else:
+            entry['role'] = None
+        
+        result.append(entry)
+    
+    result.sort(key=lambda m: (m.get('lastName') or '').lower())
+    return result
+
 # ============== Mitglieder ==============
 
 @api_router.get("/members")

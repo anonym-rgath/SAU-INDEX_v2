@@ -19,6 +19,7 @@ const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const CalendarPage = lazy(() => import('./pages/Calendar'));
 const Settings = lazy(() => import('./pages/Settings'));
 const ClubSettings = lazy(() => import('./pages/ClubSettings'));
+const MemberDirectory = lazy(() => import('./pages/MemberDirectory'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -59,6 +60,7 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="fines" element={<Fines />} />
+              <Route path="member-directory" element={<ManagementRoute><MemberDirectory /></ManagementRoute>} />
               <Route path="statistics" element={<Navigate to="/statistics-advanced" replace />} />
               <Route path="statistics-advanced" element={<AdvancedStatsRoute><StatisticsAdvanced /></AdvancedStatsRoute>} />
               <Route path="members" element={<ManagementRoute><Members /></ManagementRoute>} />

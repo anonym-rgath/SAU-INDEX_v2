@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle, Building2 } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle, Building2, ContactRound } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useBranding } from '../contexts/BrandingContext';
@@ -69,6 +69,7 @@ const TopBar = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/calendar', icon: CalendarDays, label: 'Termine' },
     { path: '/fines', icon: Receipt, label: 'Strafenübersicht' },
+    canManageMembers && { path: '/member-directory', icon: ContactRound, label: 'Mitgliederseite' },
     canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken (Erweitert)' },
   ].filter(Boolean);
 
