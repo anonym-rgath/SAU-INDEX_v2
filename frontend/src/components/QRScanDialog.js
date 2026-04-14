@@ -18,6 +18,7 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
   const [manualMode, setManualMode] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
 
@@ -25,6 +26,7 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
     if (open) {
       loadMembers();
       setScannedMember(null);
+      setAvatarUrl(null);
       setError(null);
       
       // Kamera funktioniert nur über HTTPS oder localhost
@@ -94,6 +96,22 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
     setScanning(false);
   };
 
+  const loadAvatar = async (path) => {
+    try {
+      const res = await api.get(`/profile/avatar/${path}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      setAvatarUrl(url);
+    } catch {
+      setAvatarUrl(null);
+    }
+  };
+
+  const selectMember = (member) => {
+    setScannedMember(member);
+    setAvatarUrl(null);
+    if (member.avatar_path) loadAvatar(member.avatar_path);
+  };
+
   const onScanSuccess = (decodedText) => {
     // Expected format: SAUINDEX-{memberId}
     const match = decodedText.match(/^SAUINDEX-(.+)$/);
@@ -103,7 +121,7 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
       const member = members.find(m => m.id === memberId || m.qr_code === decodedText);
       
       if (member) {
-        setScannedMember(member);
+        selectMember(member);
         stopScanner();
       } else {
         setError("Mitglied nicht gefunden. QR-Code ungültig.");
@@ -112,7 +130,7 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
       // Try direct member ID match
       const member = members.find(m => m.id === decodedText || m.qr_code === decodedText);
       if (member) {
-        setScannedMember(member);
+        selectMember(member);
         stopScanner();
       }
     }
@@ -125,7 +143,7 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
   const handleManualSelect = (memberId) => {
     const member = members.find(m => m.id === memberId);
     if (member) {
-      setScannedMember(member);
+      selectMember(member);
     }
   };
 
@@ -137,6 +155,8 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
 
   const handleClose = () => {
     stopScanner();
+    if (avatarUrl) URL.revokeObjectURL(avatarUrl);
+    setAvatarUrl(null);
     onOpenChange(false);
   };
 
@@ -157,15 +177,21 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
           {scannedMember ? (
             <div className="text-center">
               <div className="flex justify-center mb-4">
-                <div className="bg-emerald-100 p-6 rounded-2xl">
-                  <UserCheck className="w-12 h-12 text-emerald-700" />
-                </div>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profilbild" className="w-24 h-24 rounded-2xl object-cover border-2 border-emerald-200" />
+                ) : (
+                  <div className="bg-emerald-100 p-6 rounded-2xl">
+                    <UserCheck className="w-12 h-12 text-emerald-700" />
+                  </div>
+                )}
               </div>
               <p className="text-stone-900 font-semibold text-lg mb-2">
                 Mitglied erkannt
               </p>
               <p className="text-2xl font-bold text-emerald-700 mb-2">
-                {scannedMember.name}
+                {scannedMember.firstName && scannedMember.lastName 
+                  ? `${scannedMember.firstName} ${scannedMember.lastName}` 
+                  : scannedMember.name || 'Unbekannt'}
               </p>
               <p className="text-sm text-stone-500">
                 {scannedMember.status === 'aktiv' ? 'Aktives Mitglied' : 'Passives Mitglied'}
