@@ -95,8 +95,8 @@ const QRScanDialog = ({ open, onOpenChange, onScanComplete }) => {
   };
 
   const onScanSuccess = (decodedText) => {
-    // Expected format: RHEINZEL-{memberId}
-    const match = decodedText.match(/^RHEINZEL-(.+)$/);
+    // Expected format: SAUINDEX-{memberId}
+    const match = decodedText.match(/^SAUINDEX-(.+)$/);
     
     if (match) {
       const memberId = match[1];

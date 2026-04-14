@@ -10,13 +10,15 @@ import {
   DialogFooter,
 } from './ui/dialog';
 import { Download, QrCode } from 'lucide-react';
+import { useBranding } from '../contexts/BrandingContext';
 
 const QRCodeDialog = ({ open, onOpenChange, member }) => {
   const qrRef = useRef(null);
+  const { clubName } = useBranding();
 
   if (!member) return null;
 
-  const qrValue = `RHEINZEL-${member.id}`;
+  const qrValue = `SAUINDEX-${member.id}`;
   
   // Vollständiger Name
   const fullName = member.firstName && member.lastName 
@@ -52,7 +54,7 @@ const QRCodeDialog = ({ open, onOpenChange, member }) => {
       // Add subtitle
       ctx.fillStyle = '#78716c';
       ctx.font = '16px system-ui, -apple-system, sans-serif';
-      ctx.fillText('Rheinzelmänner', canvas.width / 2, 410);
+      ctx.fillText(clubName, canvas.width / 2, 410);
       
       // Download
       const link = document.createElement('a');
@@ -91,7 +93,7 @@ const QRCodeDialog = ({ open, onOpenChange, member }) => {
               fgColor="#1c1917"
             />
             <p className="mt-4 font-bold text-lg text-stone-900">{fullName}</p>
-            <p className="text-sm text-stone-500">Rheinzelmänner</p>
+            <p className="text-sm text-stone-500">{clubName}</p>
           </div>
           
           <p className="mt-4 text-xs text-center text-stone-400">

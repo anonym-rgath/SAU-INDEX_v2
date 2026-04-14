@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { BrandingProvider } from './contexts/BrandingContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -47,6 +48,7 @@ const AdminRoute = ({ children }) => {
 function App() {
   return (
     <ThemeProvider>
+    <BrandingProvider>
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
@@ -74,6 +76,7 @@ function App() {
       </BrowserRouter>
       <Toaster position="top-right" richColors />
     </AuthProvider>
+    </BrandingProvider>
     </ThemeProvider>
   );
 }

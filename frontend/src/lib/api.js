@@ -67,4 +67,14 @@ export const api = {
     updateSettings: (data) => axios.put(`${API_URL}/settings/ics`, data),
     sync: () => axios.post(`${API_URL}/settings/ics/sync`),
   },
+  clubSettings: {
+    get: () => axios.get(`${API_URL}/club-settings`),
+    update: (data) => axios.put(`${API_URL}/club-settings`, data),
+    uploadLogo: (formData) => axios.post(`${API_URL}/club-settings/logo`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    deleteLogo: () => axios.delete(`${API_URL}/club-settings/logo`),
+  },
+  branding: {
+    get: () => axios.get(`${API_URL}/branding`),
+    logoUrl: `${API_URL}/club-settings/logo`,
+  },
 };

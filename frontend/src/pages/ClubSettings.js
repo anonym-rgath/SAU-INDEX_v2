@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Building2, Save, Loader2, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Building2, Save, Loader2, RefreshCw, Upload, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { useAuth } from '../contexts/AuthContext';
+import { useBranding } from '../contexts/BrandingContext';
 import { api } from '../lib/api';
 import { toast } from 'sonner';
 
@@ -35,12 +36,19 @@ const Section = ({ title, description, children }) => (
 
 const ClubSettings = () => {
   const { isMitglied } = useAuth();
+  const { loadBranding, logoUrl, hasLogo } = useBranding();
   const canEdit = !isMitglied;
+  const [clubName, setClubName] = useState('');
   const [foundingDate, setFoundingDate] = useState('');
   const [fiscalYearStartMonth, setFiscalYearStartMonth] = useState(8);
   const [loading, setLoading] = useState(true);
+  const [savingClubName, setSavingClubName] = useState(false);
   const [savingFoundingDate, setSavingFoundingDate] = useState(false);
   const [savingFiscalYear, setSavingFiscalYear] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [currentHasLogo, setCurrentHasLogo] = useState(false);
+  const logoInputRef = useRef(null);
 
   // ICS State
   const [icsUrl, setIcsUrl] = useState('');
@@ -60,9 +68,47 @@ const ClubSettings = () => {
       const res = await api.get('/club-settings');
       setFoundingDate(res.data.founding_date || '');
       setFiscalYearStartMonth(res.data.fiscal_year_start_month || 8);
+      setClubName(res.data.club_name || '');
+      setCurrentHasLogo(res.data.has_logo || false);
     } catch {
       toast.error('Fehler beim Laden der Vereinsstammdaten');
     }
+  };
+
+  const handleSaveClubName = async () => {
+    setSavingClubName(true);
+    try {
+      await api.put('/club-settings', { club_name: clubName || null });
+      toast.success('Vereinsname gespeichert');
+      loadBranding();
+    } catch { toast.error('Fehler beim Speichern'); }
+    finally { setSavingClubName(false); }
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.clubSettings.uploadLogo(formData);
+      toast.success('Logo gespeichert');
+      setCurrentHasLogo(true);
+      setLogoPreview(`${logoUrl}?t=${Date.now()}`);
+      loadBranding();
+    } catch { toast.error('Fehler beim Hochladen'); }
+    finally { setUploadingLogo(false); if (logoInputRef.current) logoInputRef.current.value = ''; }
+  };
+
+  const handleLogoDelete = async () => {
+    try {
+      await api.clubSettings.deleteLogo();
+      toast.success('Logo entfernt');
+      setCurrentHasLogo(false);
+      setLogoPreview(null);
+      loadBranding();
+    } catch { toast.error('Fehler beim Löschen'); }
   };
 
   const loadIcsSettings = async () => {
@@ -147,6 +193,54 @@ const ClubSettings = () => {
           </div>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Zentrale Angaben des Vereins</p>
         </div>
+
+        {/* Vereinsname */}
+        <Section title="Vereinsname" description="Name des Vereins (erscheint in Header, Login etc.)">
+          <input
+            data-testid="club-name-input"
+            type="text"
+            value={clubName}
+            onChange={e => setClubName(e.target.value)}
+            disabled={!canEdit}
+            placeholder="SAU-INDEX"
+            className="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-left focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+          {canEdit && (
+            <Button data-testid="save-club-name" onClick={handleSaveClubName} disabled={savingClubName} className="h-10 px-5 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800">
+              {savingClubName ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Speichern
+            </Button>
+          )}
+        </Section>
+
+        {/* Vereinslogo */}
+        <Section title="Vereinslogo" description="Logo des Vereins (PNG, JPG, max. 512px)">
+          {(currentHasLogo || logoPreview) && (
+            <div className="flex items-center gap-4">
+              <img
+                src={logoPreview || `${logoUrl}?t=${Date.now()}`}
+                alt="Vereinslogo"
+                className="w-20 h-20 object-contain rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-2"
+                data-testid="club-logo-preview"
+              />
+              {canEdit && (
+                <Button data-testid="delete-club-logo" onClick={handleLogoDelete} variant="outline" className="h-10 px-4 rounded-xl text-red-600 border-red-200 hover:bg-red-50">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Entfernen
+                </Button>
+              )}
+            </div>
+          )}
+          {canEdit && (
+            <div>
+              <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleLogoUpload} className="hidden" data-testid="club-logo-input" />
+              <Button data-testid="upload-club-logo" onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo} variant="outline" className="h-10 px-5 rounded-xl">
+                {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                {currentHasLogo ? 'Logo ändern' : 'Logo hochladen'}
+              </Button>
+            </div>
+          )}
+        </Section>
 
         {/* Gründungsdatum */}
         <Section title="Gründungsdatum" description="Offizielles Gründungsdatum des Vereins">

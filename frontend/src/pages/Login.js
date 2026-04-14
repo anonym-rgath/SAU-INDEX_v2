@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useBranding } from '../contexts/BrandingContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -12,6 +13,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [logoutReason, setLogoutReason] = useState('');
   const { login, loading } = useAuth();
+  const { clubName, hasLogo, logoUrl } = useBranding();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,14 +49,14 @@ const Login = () => {
         <div className="bg-white rounded-3xl shadow-2xl p-8 border border-stone-200">
           <div className="flex items-center justify-center mb-6">
             <img 
-              src="/logo.png" 
-              alt="Rheinzelmänner Logo" 
+              src={hasLogo ? logoUrl : '/logo.png'} 
+              alt={clubName} 
               className="w-48 h-48 object-contain"
             />
           </div>
           
           <h1 className="text-4xl font-bold text-center mb-2 text-stone-900 tracking-tight">
-            Rheinzelmänner
+            {clubName}
           </h1>
           <p className="text-center text-stone-500 mb-8">
             Verwaltung

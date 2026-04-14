@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, Menu, X, LayoutDashboard, Receipt, Users, Tag, BarChart4, Key, Shield, ShieldCheck, CalendarDays, ChevronDown, SlidersHorizontal, UserCircle, Building2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useBranding } from '../contexts/BrandingContext';
 import { displayRole } from '../lib/utils';
 import { cn } from '../lib/utils';
 import { api } from '../lib/api';
@@ -10,6 +11,7 @@ import ChangePasswordDialog from './ChangePasswordDialog';
 
 const TopBar = () => {
   const { logout, isAdmin, isMitglied, canSeeAdvancedStats, canManageMembers, canManageFineTypes, canSeeAllFines, user } = useAuth();
+  const { clubName, hasLogo, logoUrl } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -103,13 +105,13 @@ const TopBar = () => {
           </Button>
           
           <div className="flex items-center gap-2">
-            <img 
-              src="/logo.png" 
-              alt="Rheinzelmänner" 
-              className="w-8 h-8 object-contain"
-            />
+            {hasLogo ? (
+              <img src={logoUrl} alt={clubName} className="w-8 h-8 object-contain" />
+            ) : (
+              <img src="/logo.png" alt={clubName} className="w-8 h-8 object-contain" />
+            )}
             <div>
-              <h2 className="font-bold text-base text-stone-900 dark:text-stone-100 leading-none">Rheinzelmänner</h2>
+              <h2 className="font-bold text-base text-stone-900 dark:text-stone-100 leading-none">{clubName}</h2>
             </div>
           </div>
         </div>
@@ -136,13 +138,13 @@ const TopBar = () => {
           {/* Drawer Header */}
           <div className="flex items-center justify-between p-4 border-b border-stone-200 dark:border-stone-700">
             <div className="flex items-center gap-2">
-              <img 
-                src="/logo.png" 
-                alt="Rheinzelmänner" 
-                className="w-10 h-10 object-contain"
-              />
+              {hasLogo ? (
+                <img src={logoUrl} alt={clubName} className="w-10 h-10 object-contain" />
+              ) : (
+                <img src="/logo.png" alt={clubName} className="w-10 h-10 object-contain" />
+              )}
               <div>
-                <h2 className="font-bold text-lg text-stone-900 dark:text-stone-100">Rheinzelmänner</h2>
+                <h2 className="font-bold text-lg text-stone-900 dark:text-stone-100">{clubName}</h2>
               </div>
             </div>
             <Button

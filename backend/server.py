@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -328,10 +328,15 @@ class ProfileUpdate(BaseModel):
 class ClubSettingsUpdate(BaseModel):
     founding_date: Optional[str] = None
     fiscal_year_start_month: Optional[int] = None
+    club_name: Optional[str] = None
 
 # --- Avatar Storage (Lokal) ---
 AVATAR_DIR = os.environ.get("AVATAR_DIR", "/app/data/avatars")
 os.makedirs(AVATAR_DIR, exist_ok=True)
+
+# --- Logo Storage (Lokal) ---
+LOGO_DIR = os.environ.get("LOGO_DIR", "/app/data/logos")
+os.makedirs(LOGO_DIR, exist_ok=True)
 
 # Avatar-Konfiguration
 AVATAR_ALLOWED_MIMES = {"image/jpeg", "image/png"}
@@ -2003,16 +2008,23 @@ async def get_club_settings(auth=Depends(verify_token)):
     """Vereinsstammdaten abrufen"""
     settings = await db.settings.find_one({"key": "club_settings"}, {"_id": 0})
     if not settings:
-        return {"founding_date": None, "fiscal_year_start_month": FISCAL_YEAR_START_MONTH}
+        return {"founding_date": None, "fiscal_year_start_month": FISCAL_YEAR_START_MONTH, "club_name": None, "has_logo": False}
+    
+    logo_exists = any(f.startswith("club_logo.") for f in os.listdir(LOGO_DIR)) if os.path.exists(LOGO_DIR) else False
     return {
         "founding_date": settings.get("founding_date"),
         "fiscal_year_start_month": settings.get("fiscal_year_start_month", FISCAL_YEAR_START_MONTH),
+        "club_name": settings.get("club_name"),
+        "has_logo": logo_exists,
     }
 
 @api_router.put("/club-settings")
 async def update_club_settings(input: ClubSettingsUpdate, request: Request, auth=Depends(require_any_role)):
     """Vereinsstammdaten aktualisieren"""
     update_data = {}
+    
+    if input.club_name is not None:
+        update_data["club_name"] = input.club_name.strip() if input.club_name.strip() else None
     
     if input.founding_date is not None:
         # Datumsvalidierung
@@ -2066,6 +2078,83 @@ async def update_club_settings(input: ClubSettingsUpdate, request: Request, auth
     )
     
     return {"message": "Vereinsstammdaten gespeichert"}
+
+@api_router.get("/branding")
+async def get_branding():
+    """Öffentlicher Branding-Endpoint (kein Auth nötig, z.B. für Login-Seite)"""
+    settings = await db.settings.find_one({"key": "club_settings"}, {"_id": 0})
+    club_name = settings.get("club_name") if settings else None
+    logo_exists = any(f.startswith("club_logo.") for f in os.listdir(LOGO_DIR)) if os.path.exists(LOGO_DIR) else False
+    return {
+        "club_name": club_name or "SAU-INDEX",
+        "has_logo": logo_exists,
+    }
+
+@api_router.post("/club-settings/logo")
+async def upload_club_logo(file: UploadFile = File(...), request: Request = None, auth=Depends(require_admin_or_spiess)):
+    """Vereinslogo hochladen"""
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Nur Bilddateien erlaubt (PNG, JPG)")
+    
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "png"
+    if ext not in ["png", "jpg", "jpeg", "webp"]:
+        raise HTTPException(status_code=400, detail="Nur PNG, JPG oder WebP erlaubt")
+    
+    # Alte Logos löschen
+    for f in os.listdir(LOGO_DIR):
+        if f.startswith("club_logo."):
+            os.remove(os.path.join(LOGO_DIR, f))
+    
+    logo_path = os.path.join(LOGO_DIR, f"club_logo.{ext}")
+    
+    # Komprimieren mit Pillow
+    try:
+        from PIL import Image
+        import io
+        content = await file.read()
+        img = Image.open(io.BytesIO(content))
+        img.thumbnail((512, 512))
+        if img.mode == 'RGBA' and ext in ['jpg', 'jpeg']:
+            img = img.convert('RGB')
+        img.save(logo_path, quality=85, optimize=True)
+    except Exception:
+        # Fallback: direkt speichern
+        content = await file.read() if not content else content
+        with open(logo_path, "wb") as f:
+            f.write(content)
+    
+    await log_audit(
+        AuditAction.UPDATE, "settings", "club_logo",
+        auth.get('user_id'), auth.get('username'),
+        "Vereinslogo aktualisiert",
+        request.client.host if request and request.client else None
+    )
+    
+    return {"message": "Logo gespeichert"}
+
+@api_router.delete("/club-settings/logo")
+async def delete_club_logo(request: Request, auth=Depends(require_admin_or_spiess)):
+    """Vereinslogo löschen"""
+    for f in os.listdir(LOGO_DIR):
+        if f.startswith("club_logo."):
+            os.remove(os.path.join(LOGO_DIR, f))
+    
+    await log_audit(
+        AuditAction.UPDATE, "settings", "club_logo",
+        auth.get('user_id'), auth.get('username'),
+        "Vereinslogo entfernt",
+        request.client.host if request and request.client else None
+    )
+    return {"message": "Logo entfernt"}
+
+@api_router.get("/club-settings/logo")
+async def get_club_logo():
+    """Vereinslogo abrufen (öffentlich)"""
+    for f in os.listdir(LOGO_DIR):
+        if f.startswith("club_logo."):
+            return FileResponse(os.path.join(LOGO_DIR, f))
+    raise HTTPException(status_code=404, detail="Kein Logo vorhanden")
+
 
 @api_router.post("/settings/ics/sync")
 async def manual_ics_sync(request: Request, auth=Depends(require_admin)):
