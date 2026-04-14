@@ -63,6 +63,7 @@ const Members = () => {
 
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', status: 'aktiv',
+    qrCode: false,
     appAccess: false, username: '', password: '', role: 'mitglied',
   });
 
@@ -87,7 +88,7 @@ const Members = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const memberPayload = { firstName: formData.firstName, lastName: formData.lastName, status: formData.status };
+      const memberPayload = { firstName: formData.firstName, lastName: formData.lastName, status: formData.status, has_qr_code: formData.qrCode };
 
       if (editingMember) {
         // Mitglied aktualisieren
@@ -148,13 +149,13 @@ const Members = () => {
     setDialogOpen(false);
     setEditingMember(null);
     setShowPassword(false);
-    setFormData({ firstName: '', lastName: '', status: 'aktiv', appAccess: false, username: '', password: '', role: 'mitglied' });
+    setFormData({ firstName: '', lastName: '', status: 'aktiv', qrCode: false, appAccess: false, username: '', password: '', role: 'mitglied' });
   };
 
   const openAddDialog = () => {
     setEditingMember(null);
     setShowPassword(false);
-    setFormData({ firstName: '', lastName: '', status: 'aktiv', appAccess: false, username: '', password: '', role: 'mitglied' });
+    setFormData({ firstName: '', lastName: '', status: 'aktiv', qrCode: false, appAccess: false, username: '', password: '', role: 'mitglied' });
     setDialogOpen(true);
   };
 
@@ -165,6 +166,7 @@ const Members = () => {
       firstName: member.firstName || '',
       lastName: member.lastName || '',
       status: member.status || 'aktiv',
+      qrCode: !!member.has_qr_code,
       appAccess: !!member.user_info,
       username: member.user_info?.username || '',
       password: '',
@@ -279,9 +281,11 @@ const Members = () => {
                 </div>
                 {canManageMembers && (
                   <div className="flex gap-2 flex-shrink-0 ml-2 w-24 justify-end">
-                    <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100" title="QR-Code">
-                      <QrCode className="w-4 h-4" />
-                    </Button>
+                    {member.has_qr_code && (
+                      <Button data-testid={`qr-member-${member.id}`} onClick={() => { setQrMember(member); setQrDialogOpen(true); }} className="h-10 w-10 p-0 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100" title="QR-Code">
+                        <QrCode className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button data-testid={`edit-member-${member.id}`} onClick={() => openEditDialog(member)} className="h-10 w-10 p-0 rounded-full bg-white dark:bg-stone-700 border border-stone-200 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600" title="Bearbeiten">
                       <Pencil className="w-4 h-4" />
                     </Button>
@@ -355,6 +359,19 @@ const Members = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* QR-Code */}
+              {formData.status !== 'archiviert' && (
+                <div className="border-t border-stone-200 dark:border-stone-700 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-base font-semibold">QR-Code</Label>
+                      <p className="text-xs text-stone-400">QR-Code für dieses Mitglied erstellen</p>
+                    </div>
+                    <Switch data-testid="member-qr-toggle" checked={formData.qrCode} onCheckedChange={(checked) => setFormData({ ...formData, qrCode: checked })} />
+                  </div>
+                </div>
+              )}
 
               {/* App-Zugang */}
               {canManageAccess && formData.status !== 'archiviert' && (

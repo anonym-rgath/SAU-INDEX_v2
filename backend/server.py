@@ -202,6 +202,7 @@ class Member(BaseModel):
     firstName: str
     lastName: str
     status: MemberStatus = MemberStatus.aktiv
+    has_qr_code: bool = False
     archived_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
@@ -213,6 +214,7 @@ class MemberCreate(BaseModel):
     firstName: str
     lastName: str
     status: MemberStatus = MemberStatus.aktiv
+    has_qr_code: bool = False
 
 class FineType(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -911,6 +913,9 @@ async def get_members(auth=Depends(verify_token)):
         # Default Status auf 'aktiv' wenn leer oder nicht gesetzt
         if not member.get('status'):
             member['status'] = 'aktiv'
+        # Default has_qr_code auf False wenn nicht gesetzt
+        if 'has_qr_code' not in member:
+            member['has_qr_code'] = False
         # User-Info anreichern
         linked_user = user_by_member.get(member.get('id'))
         if linked_user:
@@ -952,7 +957,7 @@ async def update_member(request: Request, member_id: str, input: MemberCreate, a
     if not result:
         raise HTTPException(status_code=404, detail="Mitglied nicht gefunden")
     
-    update_data = {"firstName": input.firstName, "lastName": input.lastName, "status": input.status}
+    update_data = {"firstName": input.firstName, "lastName": input.lastName, "status": input.status, "has_qr_code": input.has_qr_code}
     
     # Wenn Status auf archiviert wechselt, archived_at setzen
     old_status = result.get('status', 'aktiv')
