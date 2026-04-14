@@ -6,12 +6,14 @@ import { useBranding } from '../contexts/BrandingContext';
 import { displayRole } from '../lib/utils';
 import { cn } from '../lib/utils';
 import { api } from '../lib/api';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 const DesktopSidebar = () => {
   const { logout, isAdmin, canSeeAdvancedStats, canManageMembers, canManageFineTypes, user } = useAuth();
   const { clubName, hasLogo, logoUrl } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [verwaltungOpen, setVerwaltungOpen] = useState(() => {
     const verwaltPaths = ['/members', '/fine-types', '/audit', '/settings', '/profile', '/roles', '/club-settings'];
     return verwaltPaths.includes(location.pathname);
@@ -145,6 +147,13 @@ const DesktopSidebar = () => {
           </div>
         </div>
         <button
+          onClick={() => setPasswordDialogOpen(true)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+        >
+          <Key className="w-4 h-4" />
+          <span>Passwort ändern</span>
+        </button>
+        <button
           onClick={() => { logout(); navigate('/login'); }}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
         >
@@ -152,6 +161,8 @@ const DesktopSidebar = () => {
           <span>Abmelden</span>
         </button>
       </div>
+
+      <ChangePasswordDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
     </aside>
   );
 };
