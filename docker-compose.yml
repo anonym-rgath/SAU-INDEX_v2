@@ -81,11 +81,6 @@ services:
     networks:
       - rheinzel-network
 
-  # Web-Terminal (ttyd) - Zugriff über ssh.sau-index.de via Cloudflare
-  # HINWEIS: ttyd läuft als systemd-Service direkt auf dem Host (nicht als Container).
-  # Siehe TTYD_SETUP.md für Installation und Konfiguration.
-  # Traefik routet ssh.sau-index.de an den Host-Port 7681.
-
 volumes:
   mongodb_data:
   avatar_data:
