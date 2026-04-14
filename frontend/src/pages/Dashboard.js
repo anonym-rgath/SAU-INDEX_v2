@@ -180,7 +180,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -226,6 +226,10 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* ============================================ */}
+        {/* LAYOUT: Desktop 2-Spalten / Mobil 1-Spalte */}
+        {/* ============================================ */}
+        <div className={showAdminSection ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : ""}>
         {/* ============================================ */}
         {/* BEREICH 1: Persönlich (alle Rollen) */}
         {/* ============================================ */}
@@ -400,6 +404,7 @@ const Dashboard = () => {
             </Card>
           </div>
         )}
+        </div>{/* End grid wrapper */}
 
         {/* Floating Action Buttons (nur mobil) */}
         {canManageFines && (

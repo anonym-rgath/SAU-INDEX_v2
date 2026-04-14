@@ -51,7 +51,7 @@ const ROLES = [
 const Roles = () => {
   return (
     <div data-testid="roles-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 space-y-6">
         <div>
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
@@ -60,25 +60,26 @@ const Roles = () => {
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Rollen und Berechtigungen im Überblick</p>
         </div>
 
-        {/* Rollenbeschreibungen */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
-          <div>
-            <h2 className="font-semibold text-stone-900 dark:text-stone-100">Verfügbare Rollen</h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400">Jede Rolle bestimmt den Funktionsumfang in der App</p>
+        {/* Rollenbeschreibungen + Matrix */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-5">
+            <div>
+              <h2 className="font-semibold text-stone-900 dark:text-stone-100">Verfügbare Rollen</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400">Jede Rolle bestimmt den Funktionsumfang in der App</p>
+            </div>
+            <div className="space-y-3">
+              {ROLES.map(r => (
+                <div key={r.role} className={`rounded-xl border p-3 ${r.color}`}>
+                  <p className="font-semibold text-sm">{r.role}</p>
+                  <p className="text-xs opacity-80 mt-0.5">{r.desc}</p>
+                </div>
+              ))}
+              <p className="text-xs text-stone-400 dark:text-stone-500">Rollen werden über die Benutzerverwaltung zugewiesen.</p>
+            </div>
           </div>
-          <div className="space-y-3">
-            {ROLES.map(r => (
-              <div key={r.role} className={`rounded-xl border p-3 ${r.color}`}>
-                <p className="font-semibold text-sm">{r.role}</p>
-                <p className="text-xs opacity-80 mt-0.5">{r.desc}</p>
-              </div>
-            ))}
-            <p className="text-xs text-stone-400 dark:text-stone-500">Rollen werden über die Benutzerverwaltung zugewiesen.</p>
-          </div>
-        </div>
 
-        {/* Berechtigungsmatrix */}
-        <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6">
+          {/* Berechtigungsmatrix */}
+          <div className="lg:col-span-2 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6">
           <h2 className="font-semibold text-stone-900 dark:text-stone-100">Berechtigungsmatrix</h2>
           <p className="text-sm text-stone-500 dark:text-stone-400 mb-4">Detaillierte Übersicht aller Berechtigungen je Rolle</p>
           <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-700">
@@ -142,6 +143,7 @@ const Roles = () => {
             <div className="flex items-center gap-1.5">{permIcon('own')} <span>Teilweise</span></div>
             <div className="flex items-center gap-1.5">{permIcon('anon')} <span>Anonymisiert</span></div>
             <div className="flex items-center gap-1.5">{permIcon('none')} <span>Kein Zugriff</span></div>
+          </div>
           </div>
         </div>
       </div>

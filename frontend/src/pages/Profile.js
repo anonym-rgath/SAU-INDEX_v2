@@ -144,7 +144,7 @@ const Profile = () => {
 
   return (
     <div data-testid="profile-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 space-y-6">
         <div>
           <div className="flex items-center gap-3">
             <UserCircle className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />

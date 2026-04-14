@@ -145,7 +145,7 @@ const ClubSettings = () => {
 
   return (
     <div data-testid="club-settings-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
+      <div className="max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 flex flex-col gap-6">
         <div>
           <div className="flex items-center gap-3">
             <Building2 className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
@@ -154,6 +154,8 @@ const ClubSettings = () => {
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Zentrale Angaben des Vereins</p>
         </div>
 
+        {/* Vereinsname & Logo */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Vereinsname */}
         <Section title="Vereinsname" description="Name des Vereins (erscheint in Header, Login etc.)">
           <input
@@ -201,7 +203,10 @@ const ClubSettings = () => {
             </div>
           )}
         </Section>
+        </div>{/* End grid */}
 
+        {/* Gründungsdatum & Geschäftsjahr */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gründungsdatum */}
         <Section title="Gründungsdatum" description="Offizielles Gründungsdatum des Vereins">
           <input
@@ -241,6 +246,7 @@ const ClubSettings = () => {
             </Button>
           )}
         </Section>
+        </div>{/* End grid */}
       </div>
     </div>
   );

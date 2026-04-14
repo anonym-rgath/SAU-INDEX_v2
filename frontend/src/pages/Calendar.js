@@ -243,7 +243,7 @@ const CalendarPage = () => {
 
   return (
     <div data-testid="calendar-page" className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-4xl lg:max-w-6xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -331,7 +331,9 @@ const CalendarPage = () => {
             {upcomingEvents.length === 0 ? (
               <p className="text-stone-400 dark:text-stone-500 text-sm py-8 text-center">Keine anstehenden Termine</p>
             ) : (
-              upcomingEvents.map(e => <EventCard key={e.id} event={e} />)
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {upcomingEvents.map(e => <EventCard key={e.id} event={e} />)}
+              </div>
             )}
           </div>
 
@@ -339,7 +341,9 @@ const CalendarPage = () => {
           {pastEvents.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Vergangene Termine ({pastEvents.length})</h2>
-              {pastEvents.map(e => <EventCard key={e.id} event={e} isPast />)}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {pastEvents.map(e => <EventCard key={e.id} event={e} isPast />)}
+              </div>
             </div>
           )}
         </div>

@@ -100,7 +100,7 @@ const TopBar = () => {
             onClick={() => setDrawerOpen(!drawerOpen)}
             variant="ghost"
             size="sm"
-            className="h-9 w-9 p-0 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg"
+            className="lg:hidden h-9 w-9 p-0 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg"
           >
             <Menu className="w-5 h-5" />
           </Button>
