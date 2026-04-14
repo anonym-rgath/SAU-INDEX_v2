@@ -1,101 +1,79 @@
-# Rheinzelmänner - Strafen-Management App
+# PRD — SAU-INDEX Vereinsverwaltung
 
-## Original Problem Statement
-Full-stack application for a "Schützenzug" (marksmen's platoon, "Rheinzelmänner") to manage and rank members based on fines.
-
-## Core Requirements
-- JWT-based authentication with four roles: `admin`, `spiess`, `vorstand`, `mitglied`
-- Unified member + user management with app-access toggle
-- Full CRUD for members, fines, fine types, and events
-- Role-dependent views and statistics
-- Calendar/Event system with RSVP and automatic fine assignment
-- ICS calendar sync from external source
-- Settings page with language, dark mode, ICS config, and roles overview
-- Profile page with avatar upload (Object Storage)
-- Automated database backups to SSD
-- Docker-based deployment on Raspberry Pi 4 with Traefik reverse proxy
-- Complete project documentation
+## Problem Statement
+Full-stack application for a club to manage and rank members based on fines. JWT-based auth with 4 roles (admin, spiess, vorstand, mitglied). Full CRUD for members, fines, events. Role-dependent charts, permissions, rankings. Docker deployment on Raspberry Pi 4 with Cloudflare Tunnels.
 
 ## Tech Stack
-- Frontend: React 19, Tailwind CSS (Dark Mode), Shadcn/UI, Recharts
-- Backend: Python, FastAPI, Pydantic, icalendar, slowapi
-- Database: MongoDB (4.4.18)
-- Deployment: Docker, Raspberry Pi 4 (ARM64), Traefik v3.3, Cloudflare Tunnels
-- Storage: Emergent Object Storage (Avatars)
-- Backups: Cron + mongodump (Daily/Weekly/Monthly → SSD)
+- **Frontend**: React, Tailwind CSS, Shadcn/UI, Context API
+- **Backend**: Python, FastAPI, Pydantic
+- **Database**: MongoDB (4.4.18)
+- **Deployment**: Docker, Raspberry Pi 4, Cloudflare Tunnels
 
-## Role-Based Access Control (RBAC)
-
-| Feature | Admin | Spieß | Vorstand | Mitglied |
-|---|---|---|---|---|
-| Dashboard (Persönlich) | Ja* | Ja* | Ja* | Ja |
-| Dashboard (Vereinsübersicht) | Ja | Ja | - | - |
-| Termine | CRUD + Strafen | CRUD + Strafen | CRUD + Strafen | Nur Lesen |
-| Strafenübersicht | Alle | Alle | Nur eigene | Nur eigene |
-| Statistiken (Erweitert) | Voll | Voll | Anonymisiert | - |
-| Mitgliederverwaltung | CRUD | CRUD | CRUD | - |
-| Strafenarten | CRUD | CRUD | CRUD | - |
-| Benutzerverwaltung | Voll | - | - | - |
-| Audit-Log | Ja | Ja | Ja | - |
-| Benutzerrollen | Ja | Ja | Ja | - |
-| Profil | Ja | Ja | Ja | Ja |
-| Einstellungen (ICS) | Ja | Ja | Ja | - |
-| Dark Mode | Ja | Ja | Ja | Ja |
+## Architecture
+```
+/app/
+├── backend/server.py          # Monolith — all API routes
+├── frontend/src/
+│   ├── components/
+│   │   ├── Layout.js          # Main layout with sidebar + topbar
+│   │   ├── DesktopSidebar.js  # NEW: Persistent sidebar for lg+ screens
+│   │   ├── TopBar.js          # Header with mobile drawer + notification bell
+│   │   ├── NotificationBell.js # NEW: Bell icon + dropdown panel
+│   │   ├── QRCodeDialog.js    # QR code display with avatar
+│   │   └── QRScanDialog.js    # QR scanner with avatar display
+│   ├── contexts/
+│   │   ├── AuthContext.js
+│   │   ├── BrandingContext.js
+│   │   └── ThemeContext.js
+│   └── pages/
+│       ├── Dashboard.js       # 2-column desktop layout
+│       ├── Members.js         # Table with QR toggle
+│       ├── Fines.js           # Desktop table headers
+│       ├── Calendar.js        # 2-col event grid on desktop
+│       ├── StatisticsAdvanced.js
+│       ├── ClubSettings.js    # 2-col settings grid
+│       ├── Roles.js           # 3-col grid on desktop
+│       ├── Profile.js
+│       ├── Settings.js
+│       ├── FineTypes.js
+│       ├── AuditLogs.js
+│       └── Login.js
+└── docker-compose.yml
+```
 
 ## Completed Features
-- [x] JWT Auth with 4 roles + brute-force protection
-- [x] Unified Member + User management with app-access toggle
-- [x] Auto-disable access on member archival
-- [x] Fine Types CRUD + Event fine type dropdown
-- [x] Fiscal year-based ranking and statistics
-- [x] Calendar/Event CRUD with RSVP + automatic fine assignment
-- [x] ICS Calendar daily pull-sync
-- [x] Security hardening (bcrypt 12 rounds, 8h JWT, strict CORS, Nginx headers)
-- [x] Traefik reverse proxy + Cloudflare Tunnel setup
-- [x] Dark Mode across all pages
-- [x] Dashboard split: Personal metrics + Club overview (Top 5 Ranking)
-- [x] Profile page with avatar upload (Object Storage)
-- [x] Benutzerrollen page with permissions matrix
-- [x] Sidebar: Administration group with collapsible items
-- [x] Automated DB backups (daily/weekly/monthly → SSD)
-- [x] Repository cleanup (removed obsolete files)
-- [x] Complete documentation overhaul (README, DOCKER_DEPLOYMENT, HTTPS_SETUP, TRAEFIK_SETUP)
+- JWT Auth with 4 roles (admin, spiess, vorstand, mitglied)
+- Full CRUD: Members, Fines, FineTypes, Events
+- Dynamic branding (BrandingContext — club name + logo)
+- Vorstand fine permissions (Spieß/Vorstand only, created_by tracking)
+- Members table layout with sortable headers
+- QR-Code toggle per member (has_qr_code field)
+- QR scanner with member avatar display
+- Calendar with RSVP and ICS sync
+- Audit logging
+- Profile management with avatar upload
+- Fiscal year management
+- **Notification system** (auto-notification on fine creation, bell icon with badge, read/unread, per-user isolation)
+- **Desktop-optimized responsive layout** (persistent sidebar, 2-column grids, wider containers, table headers)
+
+## Notification System (NEW)
+- Backend: `notifications` collection, auto-created on fine creation
+- Endpoints: GET /api/notifications, GET /api/notifications/unread-count, PUT /api/notifications/{id}/read, PUT /api/notifications/read-all
+- Frontend: NotificationBell with polling (30s), dropdown panel, mark as read
+- Architecture supports future types: fine, system, contribution, approval
+
+## Desktop Layout (NEW)
+- DesktopSidebar: persistent left nav on lg+ (1024px+), hidden on mobile
+- TopBar: menu button hidden on desktop, drawer for mobile
+- Dashboard: 2-column grid (personal + admin)
+- Fines: table-style headers on desktop
+- Calendar: 2-col event grid on desktop
+- ClubSettings: 2-col section grid
+- Roles: 3-col grid (roles + matrix)
+- All pages: wider containers (max-w-4xl/5xl/6xl on lg+)
 
 ## Backlog
-### P2 - Upcoming
-- [ ] Data Export (CSV/PDF for rankings/fines)
-
-### P2 - Refactoring
-- [ ] Backend: Split `server.py` (~2100 lines) into APIRouter modules
-
-## Key API Endpoints
-- Auth: `POST /api/auth/login`, `POST /api/auth/logout`, `PUT /api/auth/change-password`
-- Users: `GET/POST/PUT/DELETE /api/users`, `PUT /api/users/{id}/reset-password`
-- Members: `GET/POST/PUT/DELETE /api/members`
-- Member Access: `POST/PUT/DELETE /api/members/{id}/access`
-- Fine Types: `GET/POST/PUT/DELETE /api/fine-types`
-- Fines: `GET/POST/PUT/DELETE /api/fines`
-- Events: `GET/POST/PUT/DELETE /api/events`
-- Event RSVP: `POST /api/events/{id}/respond`
-- Event Fine Toggle: `PUT /api/events/{id}/fine-toggle`
-- Statistics: `GET /api/statistics`, `GET /api/statistics/personal`
-- Profile: `GET/PUT /api/profile`, `POST /api/profile/avatar`
-- Settings: `GET/PUT /api/settings/ics`, `POST /api/settings/ics/sync`
-- Health: `GET /health`
-
-## Changelog
-- 2026-04-02: Fixed ReferenceError in Members.js
-- 2026-04-02: Removed standalone Statistics page, merged into StatisticsAdvanced
-- 2026-04-02: Created dedicated Benutzerrollen page (/roles)
-- 2026-04-02: Dashboard redesigned: Personal + Vereinsübersicht (Top 5)
-- 2026-04-02: Created Profile page with avatar upload (Object Storage)
-- 2026-04-02: Added automatic DB backup Docker service (sau-index_backup)
-- 2026-04-02: Repository cleanup (removed obsolete files)
-- 2026-04-03: Complete documentation overhaul (README.md, DOCKER_DEPLOYMENT.md, HTTPS_SETUP.md, TRAEFIK_SETUP.md)
-- 2026-04-07: Avatar upload hardened: JPG/PNG only, magic bytes validation, Pillow compression (512px max), retry logic
-- 2026-04-07: Sidebar avatar fix: reload on drawer open, avatar-updated event sync, memory leak fix, _get_object retry
-- 2026-04-07: Benutzerrollen: "Eigene" → "Teilweise" mit Violet-Farbe
-- 2026-04-07: Neue Seite "Stammdaten des Vereins" (Gründungsdatum + Geschäftsjahr-Startmonat, global nutzbar)
-
-## Credentials
-- Admin: `admin` / `admin123`
+- P1: Backend refactoring — split server.py monolith into modular routers
+- P2: Data export (CSV/PDF) for rankings/fines
+- P2: Default logo placeholder
+- P3: Finanzdaten in Dashboard with real backend values
