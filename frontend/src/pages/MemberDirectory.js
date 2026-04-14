@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { api } from '../lib/api';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Users, Search, SlidersHorizontal, Check } from 'lucide-react';
+import { Users, Search, SlidersHorizontal, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { displayRole } from '../lib/utils';
 
@@ -29,6 +29,8 @@ const MemberDirectory = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('alle');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
   const pickerRef = useRef(null);
   const pickerBtnRef = useRef(null);
@@ -77,8 +79,34 @@ const MemberDirectory = () => {
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
-  const filteredMembers = useMemo(() => {
-    return members.filter(m => {
+  const toggleSort = (key) => {
+    if (sortBy === key) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(key);
+      setSortDir('asc');
+    }
+  };
+
+  const getSortValue = (member, key) => {
+    switch (key) {
+      case 'name': return `${member.lastName || ''} ${member.firstName || ''}`.toLowerCase();
+      case 'status': return member.status || '';
+      case 'role': return member.role || 'zzz';
+      case 'email': return (member.email || '').toLowerCase();
+      case 'birthday': return member.birthday || '';
+      case 'street': return (member.street || '').toLowerCase();
+      case 'zipCode': return member.zipCode || '';
+      case 'city': return (member.city || '').toLowerCase();
+      case 'joinDate': return member.joinDate || '';
+      case 'joinDateCorps': return member.joinDateCorps || '';
+      case 'confession': return (member.confession || '').toLowerCase();
+      default: return '';
+    }
+  };
+
+  const filteredAndSortedMembers = useMemo(() => {
+    const filtered = members.filter(m => {
       const q = searchQuery.toLowerCase();
       const matchesSearch = !q ||
         `${m.firstName} ${m.lastName}`.toLowerCase().includes(q) ||
@@ -89,7 +117,15 @@ const MemberDirectory = () => {
       const matchesStatus = statusFilter === 'alle' || m.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [members, searchQuery, statusFilter]);
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      const valA = getSortValue(a, sortBy);
+      const valB = getSortValue(b, sortBy);
+      if (valA < valB) return -1 * dir;
+      if (valA > valB) return 1 * dir;
+      return 0;
+    });
+  }, [members, searchQuery, statusFilter, sortBy, sortDir]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '–';
@@ -257,14 +293,25 @@ const MemberDirectory = () => {
               <thead>
                 <tr className="border-b border-stone-100 dark:border-stone-800">
                   {activeColumns.map(col => (
-                    <th key={col.key} className="text-left px-4 py-3 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider whitespace-nowrap">
-                      {col.label}
+                    <th
+                      key={col.key}
+                      onClick={() => toggleSort(col.key)}
+                      className="text-left px-4 py-3 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {col.label}
+                        {sortBy === col.key && (
+                          sortDir === 'asc'
+                            ? <ChevronUp className="w-3 h-3" />
+                            : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </span>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody data-testid="member-directory-list">
-                {filteredMembers.length > 0 ? filteredMembers.map(member => (
+                {filteredAndSortedMembers.length > 0 ? filteredAndSortedMembers.map(member => (
                   <tr
                     key={member.id}
                     data-testid={`directory-member-${member.id}`}
