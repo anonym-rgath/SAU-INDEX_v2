@@ -1,16 +1,68 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../lib/api';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Users, Search, Mail, MapPin, Calendar, Church } from 'lucide-react';
+import { Users, Search, SlidersHorizontal, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { displayRole } from '../lib/utils';
+
+const ALL_COLUMNS = [
+  { key: 'name', label: 'Name', alwaysVisible: true },
+  { key: 'status', label: 'Status' },
+  { key: 'role', label: 'Rolle' },
+  { key: 'email', label: 'E-Mail' },
+  { key: 'birthday', label: 'Geburtstag' },
+  { key: 'street', label: 'Straße' },
+  { key: 'zipCode', label: 'PLZ' },
+  { key: 'city', label: 'Ort' },
+  { key: 'joinDate', label: 'Eintritt (Verein)' },
+  { key: 'joinDateCorps', label: 'Eintritt (Corps)' },
+  { key: 'confession', label: 'Konfession' },
+];
+
+const DEFAULT_VISIBLE = ['name', 'status', 'role', 'email', 'birthday', 'city', 'joinDate'];
+
+const STORAGE_KEY = 'memberDirectoryColumns';
 
 const MemberDirectory = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('alle');
+  const [columnPickerOpen, setColumnPickerOpen] = useState(false);
+  const pickerRef = useRef(null);
+  const pickerBtnRef = useRef(null);
+
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_VISIBLE;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const toggleColumn = (key) => {
+    const col = ALL_COLUMNS.find(c => c.key === key);
+    if (col?.alwaysVisible) return;
+    setVisibleColumns(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
+
+  // Close picker on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (columnPickerOpen && pickerRef.current && !pickerRef.current.contains(e.target) && pickerBtnRef.current && !pickerBtnRef.current.contains(e.target)) {
+        setColumnPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [columnPickerOpen]);
 
   const loadMembers = useCallback(async () => {
     try {
@@ -23,9 +75,7 @@ const MemberDirectory = () => {
     }
   }, []);
 
-  useEffect(() => {
-    loadMembers();
-  }, [loadMembers]);
+  useEffect(() => { loadMembers(); }, [loadMembers]);
 
   const filteredMembers = useMemo(() => {
     return members.filter(m => {
@@ -33,7 +83,9 @@ const MemberDirectory = () => {
       const matchesSearch = !q ||
         `${m.firstName} ${m.lastName}`.toLowerCase().includes(q) ||
         (m.email || '').toLowerCase().includes(q) ||
-        (m.city || '').toLowerCase().includes(q);
+        (m.city || '').toLowerCase().includes(q) ||
+        (m.street || '').toLowerCase().includes(q) ||
+        (m.confession || '').toLowerCase().includes(q);
       const matchesStatus = statusFilter === 'alle' || m.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -41,9 +93,8 @@ const MemberDirectory = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '–';
-    try {
-      return new Date(dateStr).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch { return '–'; }
+    try { return new Date(dateStr).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+    catch { return '–'; }
   };
 
   const calcAge = (birthday) => {
@@ -61,11 +112,65 @@ const MemberDirectory = () => {
     return { aktiv, passiv, total: members.length };
   }, [members]);
 
+  const activeColumns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)), [visibleColumns]);
+
+  const getCellContent = (member, colKey) => {
+    const age = colKey === 'birthday' ? calcAge(member.birthday) : null;
+    switch (colKey) {
+      case 'name':
+        return <p className="font-semibold text-stone-900 dark:text-stone-100 truncate">{member.firstName} {member.lastName}</p>;
+      case 'status':
+        return (
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${member.status === 'aktiv' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'}`}>
+            {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
+          </span>
+        );
+      case 'role':
+        return member.role
+          ? <Badge className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-0 text-[10px]">{displayRole(member.role)}</Badge>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'email':
+        return member.email
+          ? <a href={`mailto:${member.email}`} className="text-sm text-emerald-700 dark:text-emerald-400 hover:underline truncate block">{member.email}</a>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'birthday':
+        return member.birthday
+          ? <span className="text-sm text-stone-600 dark:text-stone-400">{formatDate(member.birthday)}{age !== null && <span className="text-stone-400 dark:text-stone-500 ml-1">({age})</span>}</span>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'street':
+        return member.street
+          ? <span className="text-sm text-stone-600 dark:text-stone-400 truncate block">{member.street}</span>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'zipCode':
+        return member.zipCode
+          ? <span className="text-sm text-stone-600 dark:text-stone-400">{member.zipCode}</span>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'city':
+        return member.city
+          ? <span className="text-sm text-stone-600 dark:text-stone-400">{member.city}</span>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'joinDate':
+        return member.joinDate
+          ? <span className="text-sm text-stone-600 dark:text-stone-400">{formatDate(member.joinDate)}</span>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'joinDateCorps':
+        return member.joinDateCorps
+          ? <span className="text-sm text-stone-600 dark:text-stone-400">{formatDate(member.joinDateCorps)}</span>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      case 'confession':
+        return member.confession
+          ? <span className="text-sm text-stone-600 dark:text-stone-400">{member.confession}</span>
+          : <span className="text-xs text-stone-300 dark:text-stone-600">–</span>;
+      default:
+        return <span className="text-xs text-stone-300">–</span>;
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="text-stone-500 dark:text-stone-400">Laden...</div></div>;
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="max-w-2xl lg:max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl lg:max-w-[90rem] mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -77,7 +182,7 @@ const MemberDirectory = () => {
               {statusCounts.total} Mitglieder ({statusCounts.aktiv} aktiv, {statusCounts.passiv} passiv)
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {['alle', 'aktiv', 'passiv'].map(s => (
               <button
                 key={s}
@@ -91,134 +196,95 @@ const MemberDirectory = () => {
           </div>
         </div>
 
-        {/* Suche */}
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            data-testid="member-directory-search"
-            type="text"
-            placeholder="Suche nach Name, E-Mail oder Ort..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-9 pr-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-          />
-        </div>
-
-        {/* Desktop Tabelle */}
-        <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
-          {/* Desktop Header */}
-          <div className="hidden lg:grid lg:grid-cols-[1fr_120px_160px_160px_140px_100px] items-center px-5 py-3 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider border-b border-stone-100 dark:border-stone-800">
-            <div>Name</div>
-            <div>Status / Rolle</div>
-            <div>Kontakt</div>
-            <div>Adresse</div>
-            <div>Geburtstag</div>
-            <div>Eintritt</div>
+        {/* Suche + Spaltenauswahl */}
+        <div className="flex gap-3 items-center">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <input
+              data-testid="member-directory-search"
+              type="text"
+              placeholder="Suche nach Name, E-Mail, Ort, Straße..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-9 pr-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+            />
           </div>
-
-          <div data-testid="member-directory-list">
-            {filteredMembers.length > 0 ? filteredMembers.map((member) => {
-              const age = calcAge(member.birthday);
-              return (
-                <div
-                  key={member.id}
-                  data-testid={`directory-member-${member.id}`}
-                  className="border-b border-stone-50 dark:border-stone-800 last:border-0 px-5 py-4 hover:bg-stone-50/50 dark:hover:bg-stone-800/30 transition-colors"
-                >
-                  {/* Desktop Row */}
-                  <div className="hidden lg:grid lg:grid-cols-[1fr_120px_160px_160px_140px_100px] items-center gap-2">
-                    {/* Name */}
-                    <div className="min-w-0">
-                      <p className="font-semibold text-stone-900 dark:text-stone-100 truncate">
-                        {member.firstName} {member.lastName}
-                      </p>
-                    </div>
-                    {/* Status + Rolle */}
-                    <div className="flex flex-col gap-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium w-fit ${member.status === 'aktiv' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'}`}>
-                        {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
-                      </span>
-                      {member.role && (
-                        <Badge className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-0 text-[10px] w-fit">
-                          {displayRole(member.role)}
-                        </Badge>
-                      )}
-                    </div>
-                    {/* Kontakt */}
-                    <div className="min-w-0">
-                      {member.email ? (
-                        <a href={`mailto:${member.email}`} className="text-sm text-emerald-700 dark:text-emerald-400 hover:underline truncate block">{member.email}</a>
-                      ) : (
-                        <span className="text-xs text-stone-300 dark:text-stone-600">–</span>
-                      )}
-                    </div>
-                    {/* Adresse */}
-                    <div className="min-w-0">
-                      {(member.city || member.zipCode) ? (
-                        <p className="text-sm text-stone-600 dark:text-stone-400 truncate">
-                          {[member.zipCode, member.city].filter(Boolean).join(' ')}
-                        </p>
-                      ) : (
-                        <span className="text-xs text-stone-300 dark:text-stone-600">–</span>
-                      )}
-                    </div>
-                    {/* Geburtstag */}
-                    <div>
-                      {member.birthday ? (
-                        <p className="text-sm text-stone-600 dark:text-stone-400">
-                          {formatDate(member.birthday)}{age !== null && <span className="text-stone-400 dark:text-stone-500 ml-1">({age})</span>}
-                        </p>
-                      ) : (
-                        <span className="text-xs text-stone-300 dark:text-stone-600">–</span>
-                      )}
-                    </div>
-                    {/* Eintritt */}
-                    <div>
-                      {member.joinDate ? (
-                        <p className="text-sm text-stone-600 dark:text-stone-400">{formatDate(member.joinDate)}</p>
-                      ) : (
-                        <span className="text-xs text-stone-300 dark:text-stone-600">–</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Mobile Card */}
-                  <div className="lg:hidden space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold text-stone-900 dark:text-stone-100">
-                        {member.firstName} {member.lastName}
-                      </p>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${member.status === 'aktiv' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300'}`}>
-                          {member.status === 'aktiv' ? 'Aktiv' : 'Passiv'}
-                        </span>
-                        {member.role && (
-                          <Badge className="bg-blue-50 text-blue-700 border-0 text-[10px]">{displayRole(member.role)}</Badge>
-                        )}
+          {/* Column Picker */}
+          <div className="relative">
+            <button
+              ref={pickerBtnRef}
+              data-testid="column-picker-btn"
+              onClick={() => setColumnPickerOpen(!columnPickerOpen)}
+              className={`h-10 px-3 rounded-xl border transition-colors flex items-center gap-2 text-sm font-medium ${columnPickerOpen ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-700'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="hidden sm:inline">Spalten</span>
+              <span className="text-xs bg-stone-100 dark:bg-stone-700 text-stone-500 dark:text-stone-400 rounded-full px-1.5 py-0.5">{activeColumns.length}</span>
+            </button>
+            {columnPickerOpen && (
+              <div
+                ref={pickerRef}
+                data-testid="column-picker-dropdown"
+                className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-150"
+              >
+                <p className="px-3 py-1.5 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider">Sichtbare Spalten</p>
+                {ALL_COLUMNS.map(col => {
+                  const active = visibleColumns.includes(col.key);
+                  return (
+                    <button
+                      key={col.key}
+                      data-testid={`col-toggle-${col.key}`}
+                      onClick={() => toggleColumn(col.key)}
+                      disabled={col.alwaysVisible}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${col.alwaysVisible ? 'text-stone-400 dark:text-stone-500 cursor-default' : active ? 'text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800' : 'text-stone-400 dark:text-stone-500 hover:bg-stone-50 dark:hover:bg-stone-800'}`}
+                    >
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${active ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-stone-300 dark:border-stone-600'}`}>
+                        {active && <Check className="w-3 h-3" />}
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
-                      {member.email && (
-                        <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{member.email}</span>
-                      )}
-                      {(member.city || member.zipCode) && (
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{[member.zipCode, member.city].filter(Boolean).join(' ')}</span>
-                      )}
-                      {member.birthday && (
-                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(member.birthday)}{age !== null && ` (${age})`}</span>
-                      )}
-                      {member.confession && (
-                        <span className="flex items-center gap-1"><Church className="w-3 h-3" />{member.confession}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            }) : (
-              <div className="text-center text-stone-400 dark:text-stone-500 py-12">
-                {searchQuery ? 'Keine Treffer' : 'Keine Mitglieder'}
+                      {col.label}
+                    </button>
+                  );
+                })}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Tabelle */}
+        <Card className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm" data-testid="member-directory-table">
+              <thead>
+                <tr className="border-b border-stone-100 dark:border-stone-800">
+                  {activeColumns.map(col => (
+                    <th key={col.key} className="text-left px-4 py-3 text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wider whitespace-nowrap">
+                      {col.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody data-testid="member-directory-list">
+                {filteredMembers.length > 0 ? filteredMembers.map(member => (
+                  <tr
+                    key={member.id}
+                    data-testid={`directory-member-${member.id}`}
+                    className="border-b border-stone-50 dark:border-stone-800 last:border-0 hover:bg-stone-50/50 dark:hover:bg-stone-800/30 transition-colors"
+                  >
+                    {activeColumns.map(col => (
+                      <td key={col.key} className="px-4 py-3 whitespace-nowrap max-w-[200px]">
+                        {getCellContent(member, col.key)}
+                      </td>
+                    ))}
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={activeColumns.length} className="text-center text-stone-400 dark:text-stone-500 py-12">
+                      {searchQuery ? 'Keine Treffer' : 'Keine Mitglieder'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </Card>
       </div>
