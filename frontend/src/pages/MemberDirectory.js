@@ -212,7 +212,7 @@ const MemberDirectory = () => {
           <div>
             <div className="flex items-center gap-3">
               <Users className="w-7 h-7 text-emerald-700 dark:text-emerald-400" />
-              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Mitgliederseite</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">Mitgliederübersicht</h1>
             </div>
             <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
               {statusCounts.total} Mitglieder ({statusCounts.aktiv} aktiv, {statusCounts.passiv} passiv)

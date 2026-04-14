@@ -23,7 +23,7 @@ const DesktopSidebar = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/calendar', icon: CalendarDays, label: 'Termine' },
     { path: '/fines', icon: Receipt, label: 'Strafenübersicht' },
-    canManageMembers && { path: '/member-directory', icon: ContactRound, label: 'Mitgliederseite' },
+    canManageMembers && { path: '/member-directory', icon: ContactRound, label: 'Mitgliederübersicht' },
     canSeeAdvancedStats && { path: '/statistics-advanced', icon: BarChart4, label: 'Statistiken' },
   ].filter(Boolean);
 
