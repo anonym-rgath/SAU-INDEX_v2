@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Receipt, CalendarDays, BarChart4, Shield, ShieldCheck, Users, Tag, SlidersHorizontal, UserCircle, Building2, ChevronDown, LogOut, Key } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBranding } from '../contexts/BrandingContext';
 import { displayRole } from '../lib/utils';
 import { cn } from '../lib/utils';
+import { api } from '../lib/api';
 
 const DesktopSidebar = () => {
   const { logout, isAdmin, canSeeAdvancedStats, canManageMembers, canManageFineTypes, user } = useAuth();
@@ -37,6 +38,30 @@ const DesktopSidebar = () => {
   const isVerwaltungActive = verwaltungPaths.includes(location.pathname);
 
   const getInitials = () => (user?.username || '?').charAt(0).toUpperCase();
+
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadAvatar = async () => {
+      try {
+        const res = await api.get('/profile');
+        if (res.data?.avatar_path) {
+          const imgRes = await api.get(`/profile/avatar/${res.data.avatar_path}`, { responseType: 'blob' });
+          setAvatarUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(imgRes.data); });
+        }
+      } catch (err) {
+        console.error('Failed to load sidebar avatar:', err);
+      }
+    };
+    loadAvatar();
+    const handler = () => loadAvatar();
+    window.addEventListener('avatar-updated', handler);
+    return () => {
+      window.removeEventListener('avatar-updated', handler);
+      setAvatarUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+    };
+  }, [user]);
 
   return (
     <aside className="hidden lg:flex flex-col w-60 xl:w-64 bg-white dark:bg-stone-900 border-r border-stone-200 dark:border-stone-800 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
@@ -107,9 +132,13 @@ const DesktopSidebar = () => {
       {/* Footer - User */}
       <div className="p-3 border-t border-stone-100 dark:border-stone-800">
         <div className="flex items-center gap-2.5 px-2 py-1.5 mb-2">
-          <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{getInitials()}</span>
-          </div>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Profilbild" className="w-8 h-8 rounded-full object-cover border border-stone-200 dark:border-stone-700 shrink-0" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{getInitials()}</span>
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <p className="font-medium text-stone-900 dark:text-stone-100 text-sm truncate capitalize">{user?.username}</p>
             <p className="text-[11px] text-stone-500 dark:text-stone-400">{displayRole(user?.role)}</p>
