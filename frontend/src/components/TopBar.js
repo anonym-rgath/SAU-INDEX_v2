@@ -8,6 +8,7 @@ import { displayRole } from '../lib/utils';
 import { cn } from '../lib/utils';
 import { api } from '../lib/api';
 import ChangePasswordDialog from './ChangePasswordDialog';
+import NotificationBell from './NotificationBell';
 
 const TopBar = () => {
   const { logout, isAdmin, isMitglied, canSeeAdvancedStats, canManageMembers, canManageFineTypes, canSeeAllFines, user } = useAuth();
@@ -115,6 +116,8 @@ const TopBar = () => {
             </div>
           </div>
         </div>
+        
+        <NotificationBell />
       </header>
 
       {/* Drawer Overlay */}

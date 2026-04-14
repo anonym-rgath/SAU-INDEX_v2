@@ -264,6 +264,37 @@ class Statistics(BaseModel):
     laemmchen: Optional[RankingEntry] = None
     ranking: List[RankingEntry]
 
+# ============ BENACHRICHTIGUNGEN ============
+
+class NotificationType(str, Enum):
+    fine = "fine"
+    system = "system"
+    contribution = "contribution"
+    approval = "approval"
+
+class Notification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    member_id: str
+    type: NotificationType = NotificationType.fine
+    title: str
+    description: str
+    read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+async def create_notification(member_id: str, notif_type: NotificationType, title: str, description: str):
+    """Erstellt eine Benachrichtigung für ein Mitglied"""
+    notif = Notification(
+        member_id=member_id,
+        type=notif_type,
+        title=title,
+        description=description,
+    )
+    doc = notif.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.notifications.insert_one(doc)
+    return notif
+
 # ============ EVENT / KALENDER MODELS ============
 
 class EventCreate(BaseModel):
@@ -1300,6 +1331,16 @@ async def create_fine(input: FineCreate, auth=Depends(require_any_role)):
     doc = fine.model_dump()
     doc['date'] = doc['date'].isoformat()
     await db.fines.insert_one(doc)
+    
+    # Benachrichtigung für das betroffene Mitglied erstellen
+    member_name = f"{member.get('firstName', '')} {member.get('lastName', '')}".strip()
+    await create_notification(
+        member_id=input.member_id,
+        notif_type=NotificationType.fine,
+        title="Neue Strafe erhalten",
+        description=f"{fine_type['label']} — {fine.amount:.2f} €".replace('.', ','),
+    )
+    
     return fine
 
 @api_router.put("/fines/{fine_id}", response_model=Fine)
@@ -1324,6 +1365,60 @@ async def delete_fine(fine_id: str, auth=Depends(require_admin_or_spiess)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Strafe nicht gefunden")
     return {"message": "Strafe gelöscht"}
+
+# ============== Benachrichtigungen ==============
+
+@api_router.get("/notifications")
+async def get_notifications(auth=Depends(require_authenticated)):
+    """Benachrichtigungen des eingeloggten Benutzers abrufen"""
+    member_id = auth.get('member_id')
+    if not member_id:
+        return []
+    
+    notifications = await db.notifications.find(
+        {"member_id": member_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(50).to_list(50)
+    
+    return notifications
+
+@api_router.get("/notifications/unread-count")
+async def get_unread_count(auth=Depends(require_authenticated)):
+    """Anzahl ungelesener Benachrichtigungen"""
+    member_id = auth.get('member_id')
+    if not member_id:
+        return {"count": 0}
+    
+    count = await db.notifications.count_documents({"member_id": member_id, "read": False})
+    return {"count": count}
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, auth=Depends(require_authenticated)):
+    """Einzelne Benachrichtigung als gelesen markieren"""
+    member_id = auth.get('member_id')
+    if not member_id:
+        raise HTTPException(status_code=403, detail="Keine Berechtigung")
+    
+    result = await db.notifications.update_one(
+        {"id": notification_id, "member_id": member_id},
+        {"$set": {"read": True}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Benachrichtigung nicht gefunden")
+    return {"message": "Als gelesen markiert"}
+
+@api_router.put("/notifications/read-all")
+async def mark_all_notifications_read(auth=Depends(require_authenticated)):
+    """Alle Benachrichtigungen als gelesen markieren"""
+    member_id = auth.get('member_id')
+    if not member_id:
+        raise HTTPException(status_code=403, detail="Keine Berechtigung")
+    
+    await db.notifications.update_many(
+        {"member_id": member_id, "read": False},
+        {"$set": {"read": True}}
+    )
+    return {"message": "Alle als gelesen markiert"}
 
 @api_router.get("/statistics", response_model=Statistics)
 async def get_statistics(fiscal_year: str, auth=Depends(require_authenticated)):
@@ -2434,6 +2529,10 @@ async def startup_db_client():
         await db.events.create_index("ics_uid")
         await db.event_responses.create_index([("event_id", 1), ("member_id", 1)], unique=True)
         await db.event_responses.create_index("event_id")
+        # Notification-Indizes
+        await db.notifications.create_index([("member_id", 1), ("created_at", -1)])
+        await db.notifications.create_index([("member_id", 1), ("read", 1)])
+        await db.notifications.create_index("id", unique=True)
         logger.info("Datenbank-Indizes erstellt")
         
         # Vereinsstammdaten laden (Geschäftsjahr-Startmonat)
